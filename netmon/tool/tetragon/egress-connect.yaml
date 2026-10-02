@@ -1,0 +1,23 @@
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: egress-connect
+spec:
+  kprobes:
+    - call: "tcp_connect"
+      syscall: false
+      args:
+        - index: 0
+          type: "sock"
+      selectors:
+        - matchArgs:
+            - index: 0
+              operator: "NotDAddr"
+              values:
+                - "127.0.0.0/8"
+                - "10.0.0.0/8"
+                - "172.16.0.0/12"
+                - "192.168.0.0/16"
+                - "::1/128"
+                - "fe80::/10"
+                - "fc00::/7"

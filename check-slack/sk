@@ -1,0 +1,506 @@
+#!/usr/bin/env python3
+"""sk — state helper for the `check-slack` skill.
+
+One permanent share holds the whole Slack inbox: state.json (topics and items the page
+renders), index.html (the page), .feedback.jsonl (marks sent from the page). The share key
+and the check cursor live in ~/.config/check-slack/config.json, so every run updates the
+same link.
+"""
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+SKILL_DIR = Path(__file__).resolve().parent
+PAGE = SKILL_DIR / "page" / "index.html"
+CHANNELS = SKILL_DIR / "channels.json"
+SHARE_CLI = os.environ.get("SHARE_CLI", str(SKILL_DIR.parent / "share" / "share" / "bin" / "share"))
+SHARE_ROOT = Path(os.environ.get("SHARE_ROOT", str(Path.home() / ".local/share/agent-share")))
+CONFIG = Path(os.environ.get("SK_CONFIG", str(Path.home() / ".config/check-slack/config.json")))
+TCP_CLI = SKILL_DIR.parent / "clip" / "tool" / "bin" / "tcp"
+
+WORKSPACE = os.environ.get("CHECK_SLACK_WORKSPACE", "")
+FIRST_LOOKBACK_DAYS = 60
+FIRST_CHANNEL_DAYS = 14
+KINDS = ("problem", "request", "info", "decision")
+STATUSES = ("needs-you", "open", "watching", "done", "muted")
+SEVERITIES = ("high", "medium", "low")
+ADDRESSEES = ("me", "backend", "other")
+OWN_ADDRESSEES = ("me", "backend")
+ACTIONS = ("done", "mute", "dig", "note", "reopen")
+ITEM_FIELDS = ("title", "ask", "to", "kind", "status", "severity", "summary", "body", "findings", "tags",
+               "people", "links", "last_reply_ts", "topic")
+TOPIC_FIELDS = ("title", "kind", "summary", "tags")
+
+
+def now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def die(msg: str) -> None:
+    print(f"sk: {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def load_config() -> dict:
+    return json.loads(CONFIG.read_text()) if CONFIG.exists() else {}
+
+
+def save_json(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+    tmp.replace(path)
+
+
+def share_dir(cfg: dict) -> Path:
+    if not cfg.get("key"):
+        die("no share yet — run `sk init`")
+    folder = SHARE_ROOT / cfg["key"]
+    if not folder.is_dir():
+        die(f"share folder {folder} is gone (archived? restore it on the share dashboard, or `sk init --new`)")
+    return folder
+
+
+def sync_page(folder: Path) -> None:
+    target = folder / "index.html"
+    if PAGE.exists() and (not target.exists() or target.read_bytes() != PAGE.read_bytes()):
+        shutil.copy(PAGE, target)
+
+
+def open_share() -> tuple:
+    cfg = load_config()
+    folder = share_dir(cfg)
+    sync_page(folder)
+    return cfg, folder
+
+
+def load_state(folder: Path) -> dict:
+    return json.loads((folder / "state.json").read_text())
+
+
+def save_state(folder: Path, state: dict) -> None:
+    state["updated"] = now()
+    save_json(folder / "state.json", state)
+
+
+def clip_link(url: str) -> None:
+    """Put the link into the tmuxcopypast list (F9 in tmux) once."""
+    tcp = shutil.which("tcp") or str(TCP_CLI)
+    if not Path(tcp).exists():
+        return
+    try:
+        listed = subprocess.run([tcp, "list", "--json"], capture_output=True, text=True, timeout=5, check=True).stdout
+        clips = [c for part in json.loads(listed or "{}").values() for c in part]
+        if any(c.get("text", "").strip() == url for c in clips):
+            return
+        subprocess.run([tcp, "add", "-s", "ai", "-l", "check-slack", "--", url], capture_output=True, timeout=5, check=True)
+    except (subprocess.SubprocessError, json.JSONDecodeError, OSError):
+        return
+
+
+def source_key(src: dict) -> str:
+    return f"{src.get('channel_id', '')}:{src.get('thread_ts') or src.get('ts', '')}"
+
+
+def permalink(src: dict) -> str:
+    if src.get("url"):
+        return src["url"]
+    if not WORKSPACE:
+        return ""
+    ts = src.get("ts", "")
+    url = f"https://{WORKSPACE}.slack.com/archives/{src.get('channel_id', '')}/p{ts.replace('.', '')}"
+    if src.get("thread_ts") and src["thread_ts"] != ts:
+        url += f"?thread_ts={src['thread_ts']}&cid={src.get('channel_id', '')}"
+    return url
+
+
+def link_title(url: str) -> str:
+    pr = re.search(r"github\.com/[^/]+/([^/]+)/pull/(\d+)", url)
+    if pr:
+        return f"{pr.group(1)} PR #{pr.group(2)}"
+    host = re.sub(r"^www\.", "", re.sub(r"^https?://([^/]+).*", r"\1", url))
+    return host
+
+
+def normalize_links(links: list) -> list:
+    """Agents often hand over bare URLs; the page needs {title, url}."""
+    out = []
+    for link in links or []:
+        if isinstance(link, str):
+            link = {"url": link}
+        if link.get("url"):
+            out.append({"title": link.get("title") or link_title(link["url"]), "url": link["url"]})
+    return out
+
+
+def next_id(existing, prefix: str) -> str:
+    nums = [int(x[1:]) for x in existing if re.fullmatch(prefix + r"\d+", x)]
+    return f"{prefix}{max(nums, default=0) + 1}"
+
+
+def read_feedback(folder: Path) -> list:
+    log = folder / ".feedback.jsonl"
+    if not log.exists():
+        return []
+    out = []
+    for line in log.read_text().splitlines():
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return out
+
+
+def cmd_init(args) -> None:
+    cfg = load_config()
+    if cfg.get("key") and (SHARE_ROOT / cfg["key"]).is_dir() and not args.new:
+        sync_page(SHARE_ROOT / cfg["key"])
+        print(cfg["url"])
+        return
+    url = subprocess.run([SHARE_CLI, "new", "--title", "Slack inbox",
+                          "--desc", "Slack messages selected for follow-up and reference"],
+                         check=True, capture_output=True, text=True).stdout.strip()
+    key = url.rstrip("/").rsplit("/", 1)[-1]
+    subprocess.run([SHARE_CLI, "feedback", "on", key], check=True, capture_output=True, text=True)
+    folder = SHARE_ROOT / key
+    shutil.copy(PAGE, folder / "index.html")
+    state = {"title": "Slack inbox", "created": now(), "checks": [], "processed_until": "",
+             "topics": [], "items": []}
+    save_state(folder, state)
+    cfg.update({"key": key, "url": url, "created": now()})
+    save_json(CONFIG, cfg)
+    clip_link(url)
+    print(url)
+
+
+def cmd_url(args) -> None:
+    cfg, _ = open_share()
+    print(cfg["url"])
+
+
+def cmd_path(args) -> None:
+    _, folder = open_share()
+    print(folder / "state.json")
+
+
+def cmd_since(args) -> None:
+    """Where the next check starts: the previous cursor, or FIRST_LOOKBACK_DAYS back."""
+    _, folder = open_share()
+    checks = load_state(folder).get("checks", [])
+    if checks and not args.days:
+        ts = float(checks[-1]["until_ts"])
+    else:
+        ts = (datetime.now(timezone.utc) - timedelta(days=args.days or FIRST_LOOKBACK_DAYS)).timestamp()
+    day = datetime.fromtimestamp(ts, timezone.utc)
+    # Slack's after: filter is exclusive and day-granular, so search from the day before.
+    print(json.dumps({"oldest_ts": f"{ts:.6f}", "oldest_iso": day.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                      "search_after": (day - timedelta(days=1)).strftime("%Y-%m-%d"),
+                      "now_ts": f"{datetime.now(timezone.utc).timestamp():.6f}"}))
+
+
+def cmd_channels(args) -> None:
+    print(CHANNELS.read_text() if CHANNELS.exists() else "[]")
+
+
+def cmd_known(args) -> None:
+    _, folder = open_share()
+    state = load_state(folder)
+    for it in state["items"]:
+        if args.open and it.get("status") in ("done", "muted"):
+            continue
+        src = it.get("source", {})
+        print("\t".join([it["id"], it.get("topic", ""), it.get("status", ""), source_key(src),
+                         it.get("last_reply_ts", ""), src.get("channel", ""), it.get("title", "")]))
+
+
+def cmd_topics(args) -> None:
+    _, folder = open_share()
+    state = load_state(folder)
+    for t in state["topics"]:
+        items = [i for i in state["items"] if i.get("topic") == t["id"]]
+        active = sum(1 for i in items if i.get("status") not in ("done", "muted"))
+        print(f"{t['id']}\t{t.get('kind', '')}\t{active}/{len(items)}\t{t.get('title', '')}\t{', '.join(t.get('tags', []))}")
+
+
+def cmd_todo(args) -> None:
+    """List items awaiting the user's action, most severe first."""
+    _, folder = open_share()
+    state = load_state(folder)
+    rank = {sev: n for n, sev in enumerate(SEVERITIES)}
+    items = [i for i in state["items"] if i.get("status") == "needs-you"]
+    items.sort(key=lambda i: (rank.get(i.get("severity"), len(SEVERITIES)), i.get("updated", "")))
+    for it in items:
+        print(f"{it['id']} [{it.get('severity', '-')}] {it.get('title')}\n   → {it.get('ask', '(no request)')}")
+    print(f"awaiting you: {len(items)}")
+
+
+def cmd_find(args) -> None:
+    """Search the memory: every word must occur in the item, its topic or its history."""
+    _, folder = open_share()
+    state = load_state(folder)
+    topics = {t["id"]: t for t in state["topics"]}
+    words = [w.lower() for w in args.words]
+    hits = []
+    for it in state["items"]:
+        topic = topics.get(it.get("topic"), {})
+        text = " ".join(str(x) for x in (
+            it["id"], it.get("title"), it.get("summary"), it.get("body"), it.get("findings"),
+            " ".join(it.get("tags", [])), " ".join(it.get("people", [])), it.get("source", {}).get("channel"),
+            it.get("source", {}).get("author"), topic.get("title"), " ".join(m.get("text", "") for m in it.get("thread", []))
+        )).lower()
+        if all(w in text for w in words):
+            hits.append(it)
+    hits.sort(key=lambda i: i.get("updated", ""), reverse=True)
+    for it in hits[: args.limit]:
+        src = it.get("source", {})
+        print(f"{it['id']} [{it.get('status')}] {it.get('title')} — #{src.get('channel', '')} {src.get('at', '')[:10]}")
+        if it.get("ask"):
+            print(f"   → {it['ask']}")
+        print(f"   {it.get('summary', '')}")
+        if args.full:
+            for field in ("body", "findings"):
+                if it.get(field):
+                    print("   " + it[field].replace("\n", "\n   "))
+        print(f"   {src.get('url', '')}")
+    print(f"found {len(hits)}" + (f", showing {args.limit}" if len(hits) > args.limit else ""))
+
+
+def cmd_upsert(args) -> None:
+    """Merge topics and items from a JSON patch: matched by id, items also by Slack thread."""
+    _, folder = open_share()
+    state = load_state(folder)
+    patch = json.loads(Path(args.file).read_text() if args.file != "-" else sys.stdin.read())
+    stamp = now()
+    topics = {t["id"]: t for t in state["topics"]}
+    topic_by_key = {t["key"]: t["id"] for t in state["topics"] if t.get("key")}
+    report = []
+
+    for tp in patch.get("topics", []):
+        tid = tp.get("id") or topic_by_key.get(tp.get("key", ""))
+        if tid and tid in topics:
+            topic = topics[tid]
+            verb = "upd"
+        else:
+            tid = next_id(topics, "T")
+            topic = {"id": tid, "created": stamp}
+            state["topics"].append(topic)
+            topics[tid] = topic
+            verb = "new"
+        if tp.get("key"):
+            topic["key"] = tp["key"]
+            topic_by_key[tp["key"]] = tid
+        for f in TOPIC_FIELDS:
+            if f in tp:
+                topic[f] = tp[f]
+        topic["updated"] = stamp
+        report.append(f"{verb} {tid} {topic.get('title', '')}")
+
+    items = {i["id"]: i for i in state["items"]}
+    by_src = {source_key(i["source"]): i["id"] for i in state["items"] if i.get("source")}
+    for ip in patch.get("items", []):
+        src = ip.get("source") or {}
+        iid = ip.get("id") or (by_src.get(source_key(src)) if src else None)
+        if iid and iid in items:
+            item = items[iid]
+            verb = "upd"
+        else:
+            iid = next_id(items, "S")
+            item = {"id": iid, "created": stamp, "status": "open", "thread": []}
+            state["items"].append(item)
+            items[iid] = item
+            verb = "new"
+        if src:
+            merged = {**item.get("source", {}), **src}
+            merged.setdefault("url", permalink(merged))
+            item["source"] = merged
+            by_src[source_key(merged)] = iid
+        for f in ITEM_FIELDS:
+            if f in ip:
+                item[f] = normalize_links(ip[f]) if f == "links" else ip[f]
+        if item.get("topic") in topic_by_key:
+            item["topic"] = topic_by_key[item["topic"]]
+        if ip.get("note"):
+            item.setdefault("thread", []).append({"who": "ai", "at": stamp, "text": ip["note"]})
+        if ip.get("dug"):
+            item.pop("dig", None)
+        item["updated"] = stamp
+        report.append(f"{verb} {iid} [{item.get('topic', '-')}] {item.get('title', '')}")
+
+    problems = validate(state)
+    if problems:
+        print("Patch not written; format issues:\n- " + "\n- ".join(problems))
+        sys.exit(2)
+    save_state(folder, state)
+    print("\n".join(report))
+
+
+def cmd_pull(args) -> None:
+    """Marks from the page since the last merge; --merge applies them to items."""
+    _, folder = open_share()
+    state = load_state(folder)
+    since = state.get("processed_until", "")
+    fresh = [e for e in read_feedback(folder) if e.get("at", "") > since]
+    if not fresh:
+        print("No new actions.")
+        return
+    items = {i["id"]: i for i in state["items"]}
+    topic_items = {}
+    for i in state["items"]:
+        topic_items.setdefault(i.get("topic", ""), []).append(i)
+    for e in fresh:
+        d = e.get("data", {})
+        target, action, text = str(d.get("item", "")), d.get("action", "note"), str(d.get("text", "")).strip()
+        print(f"{e['at']}  {target}  {action}  {text}")
+        if not args.merge:
+            continue
+        affected = topic_items.get(target, []) if target.startswith("T") else [items[target]] if target in items else []
+        for it in affected:
+            msg = {"who": "user", "at": e["at"], "action": action}
+            if text:
+                msg["text"] = text
+            it.setdefault("thread", []).append(msg)
+            if action == "done":
+                it["status"] = "done"
+            elif action == "mute":
+                it["status"] = "muted"
+            elif action == "reopen":
+                it["status"] = "open"
+            elif action == "dig":
+                it["dig"] = True
+            elif action == "note" and text:
+                it["dig"] = True
+            it["updated"] = e["at"]
+    if args.merge:
+        state["processed_until"] = max(e["at"] for e in fresh)
+        save_state(folder, state)
+        digs = [i["id"] for i in state["items"] if i.get("dig")]
+        print(f"\nMerged actions: {len(fresh)}. Pending review (investigate/note): {', '.join(digs) or 'none'}")
+
+
+def cmd_done(args) -> None:
+    """Record a finished check and move the cursor."""
+    _, folder = open_share()
+    state = load_state(folder)
+    record = {"at": now(), "until_ts": args.until, "summary": args.summary, "mode": args.mode}
+    if args.stats:
+        record["stats"] = json.loads(args.stats)
+    state.setdefault("checks", []).append(record)
+    state["checks"] = state["checks"][-200:]
+    save_state(folder, state)
+    print(f"Check recorded, cursor {args.until}")
+
+
+def validate(state: dict) -> list:
+    problems = []
+    topic_ids = {t["id"] for t in state["topics"]}
+    for t in state["topics"]:
+        if t.get("kind") and t["kind"] not in KINDS:
+            problems.append(f"{t['id']}: kind '{t['kind']}' not in {KINDS}")
+        if not t.get("title"):
+            problems.append(f"{t['id']}: missing title")
+    for i in state["items"]:
+        tag = i["id"]
+        if i.get("topic") not in topic_ids:
+            problems.append(f"{tag}: topic '{i.get('topic')}' does not exist")
+        if i.get("kind") not in KINDS:
+            problems.append(f"{tag}: kind '{i.get('kind')}' not in {KINDS}")
+        if i.get("status") not in STATUSES:
+            problems.append(f"{tag}: status '{i.get('status')}' not in {STATUSES}")
+        if i.get("severity") and i["severity"] not in SEVERITIES:
+            problems.append(f"{tag}: severity '{i['severity']}' not in {SEVERITIES}")
+        for f in ("title", "summary"):
+            if not i.get(f):
+                problems.append(f"{tag}: missing {f}")
+        if i.get("status") == "needs-you" and not i.get("ask"):
+            problems.append(f"{tag}: needs-you requires an ask describing the user's action")
+        if i.get("to") and i["to"] not in ADDRESSEES:
+            problems.append(f"{tag}: to '{i['to']}' not in {ADDRESSEES}")
+        if i.get("status") == "needs-you" and i.get("to") not in OWN_ADDRESSEES:
+            problems.append(f"{tag}: needs-you requires to=me or to=backend")
+        if i.get("severity") == "high" and i.get("to") not in OWN_ADDRESSEES:
+            problems.append(f"{tag}: high severity requires to=me or to=backend")
+        if not i.get("source", {}).get("channel_id"):
+            problems.append(f"{tag}: missing source.channel_id")
+    return problems
+
+
+def cmd_check(args) -> None:
+    _, folder = open_share()
+    state = load_state(folder)
+    problems = validate(state)
+    c = {s: sum(1 for i in state["items"] if i.get("status") == s) for s in STATUSES}
+    print(f"topics {len(state['topics'])}, items {len(state['items'])}: " + ", ".join(f"{k} {v}" for k, v in c.items()))
+    if problems:
+        print("- " + "\n- ".join(problems))
+        sys.exit(2)
+    print("OK")
+
+
+def cmd_status(args) -> None:
+    cfg = load_config()
+    if not cfg.get("key"):
+        print("Share does not exist yet (`sk init`).")
+        return
+    _, folder = open_share()
+    state = load_state(folder)
+    last = state.get("checks", [])[-1:] or [{}]
+    c = {s: sum(1 for i in state["items"] if i.get("status") == s) for s in STATUSES}
+    print(f"{cfg['url']}\nlast check: {last[0].get('at', 'never')}  "
+          + ", ".join(f"{k} {v}" for k, v in c.items()))
+
+
+def cmd_page(args) -> None:
+    cfg, folder = open_share()
+    shutil.copy(PAGE, folder / "index.html")
+    print(cfg["url"])
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(prog="sk", description=__doc__)
+    sub = p.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("init", help="create the permanent share once (prints its url); --new makes a fresh one")
+    s.add_argument("--new", action="store_true")
+    s.set_defaults(fn=cmd_init)
+    for name, fn, hlp in (("url", cmd_url, "share url"), ("path", cmd_path, "path to state.json"),
+                          ("channels", cmd_channels, "channels to sweep (channels.json)"),
+                          ("topics", cmd_topics, "topics: id, kind, active/total, title, tags"),
+                          ("check", cmd_check, "validate state.json"),
+                          ("todo", cmd_todo, "needs-you items with what exactly is asked"), ("status", cmd_status, "url, last check, counts"),
+                          ("page", cmd_page, "refresh the page template now")):
+        s = sub.add_parser(name, help=hlp)
+        s.set_defaults(fn=fn)
+    s = sub.add_parser("since", help="where this check starts (JSON: oldest_ts, search_after, now_ts)")
+    s.add_argument("--days", type=int, help="look back N days instead of the cursor")
+    s.set_defaults(fn=cmd_since)
+    s = sub.add_parser("known", help="known items: id, topic, status, channel:thread, last_reply_ts, channel, title")
+    s.add_argument("--open", action="store_true", help="skip done/muted")
+    s.set_defaults(fn=cmd_known)
+    s = sub.add_parser("find", help="search the memory (all words must match); --full prints body and findings")
+    s.add_argument("words", nargs="+")
+    s.add_argument("--full", action="store_true")
+    s.add_argument("--limit", type=int, default=20)
+    s.set_defaults(fn=cmd_find)
+    s = sub.add_parser("upsert", help="merge a JSON patch {topics:[…], items:[…]} (file or - for stdin)")
+    s.add_argument("file")
+    s.set_defaults(fn=cmd_upsert)
+    s = sub.add_parser("pull", help="marks sent from the page; --merge applies them")
+    s.add_argument("--merge", action="store_true")
+    s.set_defaults(fn=cmd_pull)
+    s = sub.add_parser("done", help="record a finished check and move the cursor")
+    s.add_argument("--until", required=True, help="Slack ts the check covered up to (sk since → now_ts)")
+    s.add_argument("--summary", required=True, help="one line: what this check found")
+    s.add_argument("--mode", default="manual", choices=("manual", "daily"))
+    s.add_argument("--stats", help='JSON, e.g. {"new":3,"updated":2}')
+    s.set_defaults(fn=cmd_done)
+    args = p.parse_args()
+    args.fn(args)
+
+
+if __name__ == "__main__":
+    main()

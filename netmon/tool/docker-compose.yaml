@@ -1,0 +1,87 @@
+name: netmon
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  suricata:
+    image: jasonish/suricata@sha256:46eb25a3577657665185ba7d2ef2c2c92415881b90123397c5dd63ea40a9e759
+    container_name: netmon-suricata
+    network_mode: host
+    cap_add: [NET_ADMIN, NET_RAW, SYS_NICE]
+    environment:
+      PUID: "${NETMON_UID:-1000}"
+      PGID: "${NETMON_GID:-1000}"
+    command:
+      - -i
+      - ${NETMON_IFACE:?run ./up.sh}
+      - --set
+      - vars.address-groups.HOME_NET=[192.168.0.0/16,10.0.0.0/8,172.16.0.0/12,${NETMON_HOST_IP:?run ./up.sh}/32]
+    volumes:
+      - ./suricata/suricata.yaml:/etc/suricata/suricata.yaml
+      - ./data/rules:/var/lib/suricata/rules
+      - ./data/suricata:/var/log/suricata
+    mem_limit: 1500m
+    restart: unless-stopped
+    logging: *logging
+
+  tetragon:
+    image: quay.io/cilium/tetragon@sha256:3f9ab530fa832c9c80244aa6776ba794abbd9c313ce6c3177a96b3991b01469c
+    container_name: netmon-tetragon
+    pid: host
+    cgroup: host
+    privileged: true
+    command:
+      - /usr/bin/tetragon
+      - --tracing-policy-dir=/etc/tetragon/tetragon.tp.d
+      - --export-filename=/var/log/tetragon/tetragon.log
+      - --export-file-max-size-mb=50
+      - --export-file-max-backups=40
+      - --export-allowlist={"event_set":["PROCESS_KPROBE"]}
+      - --server-address=
+      - --disable-kprobe-multi
+    volumes:
+      - /sys/kernel:/sys/kernel
+      - ./tetragon:/etc/tetragon/tetragon.tp.d:ro
+      - ./data/tetragon:/var/log/tetragon
+    mem_limit: 512m
+    restart: unless-stopped
+    logging: *logging
+
+  scheduler:
+    build: ./scheduler
+    image: netmon-scheduler:local
+    container_name: netmon-scheduler
+    network_mode: host
+    env_file: .env
+    environment:
+      NETMON_SHARE_DIR_IN_CONTAINER: /share
+    volumes:
+      - .:/netmon
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${NETMON_SHARE_DIR:-./data/share}:/share
+      - /var/log:/hostlog:ro
+    mem_limit: 768m
+    restart: unless-stopped
+    logging: *logging
+
+  bot:
+    profiles: [bot]
+    image: netmon-scheduler:local
+    container_name: netmon-bot
+    network_mode: host
+    env_file: .env
+    command: ["python3", "-u", "/netmon/bot.py"]
+    environment:
+      NETMON_SHARE_DIR_IN_CONTAINER: /share
+    volumes:
+      - .:/netmon
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${NETMON_SHARE_DIR:-./data/share}:/share
+      - /var/log:/hostlog:ro
+    mem_limit: 512m
+    restart: unless-stopped
+    logging: *logging

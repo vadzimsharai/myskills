@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+# fail2ban ignorecommand: exit 0 when the IP is listed in the netmon trusted IPs file.
+import ipaddress
+import json
+import sys
+import time
+
+TRUSTED_IPS_FILE = "@TRUSTED_IPS_FILE@"
+TRUSTED_DYNAMIC_FILE = "@TRUSTED_DYNAMIC_FILE@"
+
+
+def dynamic_trusted(address):
+    try:
+        entries = json.load(open(TRUSTED_DYNAMIC_FILE))
+        return float(entries.get(str(address), 0)) > time.time()
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
+def main():
+    try:
+        address = ipaddress.ip_address(sys.argv[1])
+    except (IndexError, ValueError):
+        return 1
+    if dynamic_trusted(address):
+        return 0
+    try:
+        lines = open(TRUSTED_IPS_FILE).read().splitlines()
+    except OSError:
+        return 1
+    for line in lines:
+        entry = line.split("#", 1)[0].strip()
+        if not entry:
+            continue
+        try:
+            if address in ipaddress.ip_network(entry, strict=False):
+                return 0
+        except ValueError:
+            continue
+    return 1
+
+
+sys.exit(main())

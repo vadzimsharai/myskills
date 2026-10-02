@@ -1,0 +1,20 @@
+services:
+  share:
+    build:
+      context: .
+      args:
+        SHARE_UID: ${SHARE_UID:-1000}
+        SHARE_GID: ${SHARE_GID:-1000}
+    container_name: agent-share
+    environment:
+      SHARE_ROOT: /srv/share
+      SHARE_LISTEN: :8080
+      SHARE_SECRET: ${SHARE_SECRET:?Run ../setup.sh first}
+      SHARE_LOGIN: ${SHARE_LOGIN:-}
+      SHARE_PASSWORD: ${SHARE_PASSWORD:-}
+      SHARE_AUTH_PATH: ${SHARE_AUTH_PATH:-owner}
+    volumes:
+      - ${SHARE_ROOT:?Set SHARE_ROOT}:/srv/share
+    ports:
+      - 127.0.0.1:${SHARE_PORT:-8080}:8080
+    restart: unless-stopped

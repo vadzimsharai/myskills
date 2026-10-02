@@ -1,0 +1,554 @@
+#!/usr/bin/env python3
+"""dq — state helper for the `discuss` skill.
+
+One discussion = one share folder: state.json (the source of truth the page renders),
+index.html (the page), .feedback.jsonl (answers POSTed from the page). A registry in
+~/.local/share/discuss/registry.json remembers every discussion so a hook can remind the
+agent which ones are still open.
+"""
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+SKILL_DIR = Path(__file__).resolve().parent
+PAGE = SKILL_DIR / "page" / "index.html"
+SHARE_CLI = os.environ.get("SHARE_CLI", str(SKILL_DIR.parent / "share/share/bin/share"))
+SHARE_ROOT = Path(os.environ.get("SHARE_ROOT", str(Path.home() / ".local/share/agent-share")))
+REGISTRY = Path(os.environ.get("DQ_REGISTRY", str(Path.home() / ".local/share/discuss/registry.json")))
+
+STATUSES = ("needs-you", "in-progress", "closed")
+ID_RE = re.compile(r"^[A-Z][0-9]+(\.[0-9]+)*$")
+GENERAL = "_general"
+
+
+def now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def die(msg: str) -> None:
+    print(f"dq: {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def load_registry() -> dict:
+    if REGISTRY.exists():
+        return json.loads(REGISTRY.read_text())
+    return {"lists": []}
+
+
+def save_registry(reg: dict) -> None:
+    REGISTRY.parent.mkdir(parents=True, exist_ok=True)
+    tmp = REGISTRY.with_suffix(".tmp")
+    tmp.write_text(json.dumps(reg, ensure_ascii=False, indent=2) + "\n")
+    tmp.replace(REGISTRY)
+
+
+def sync_page(entry: dict) -> None:
+    """Every discussion shows the current template: a stale copy is replaced on any touch."""
+    target = SHARE_ROOT / entry["key"] / "index.html"
+    if target.parent.is_dir() and PAGE.exists() and (not target.exists() or target.read_bytes() != PAGE.read_bytes()):
+        shutil.copy(PAGE, target)
+
+
+def clip_link(entry: dict) -> None:
+    tcp = shutil.which("tcp") or str(SKILL_DIR.parent / "clip/tool/bin/tcp")
+    if not Path(tcp).exists():
+        return
+    try:
+        listed = subprocess.run([tcp, "list", "--json"], capture_output=True, text=True, timeout=5, check=True).stdout
+        clips = [c for part in json.loads(listed or "{}").values() for c in part]
+        if any(c.get("text", "").strip() == entry["url"] for c in clips):
+            return
+        subprocess.run([tcp, "add", "-s", "ai", "-l", "discuss", "--", entry["url"]],
+                       capture_output=True, timeout=5, check=True)
+    except (subprocess.SubprocessError, json.JSONDecodeError, OSError):
+        return
+
+
+def resolve(ref: str) -> dict:
+    """A discussion is named by its share key, a unique key prefix, or its slug."""
+    hits = [e for e in load_registry()["lists"] if ref in (e["key"], e.get("slug")) or e["key"].startswith(ref)]
+    if len(hits) != 1:
+        die(f"'{ref}' matches {len(hits)} discussions (see `dq status --all`)")
+    sync_page(hits[0])
+    return hits[0]
+
+
+def state_path(entry: dict) -> Path:
+    return SHARE_ROOT / entry["key"] / "state.json"
+
+
+def load_state(entry: dict) -> dict:
+    return json.loads(state_path(entry).read_text())
+
+
+def save_state(entry: dict, state: dict) -> None:
+    state["updated"] = now()
+    path = state_path(entry)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n")
+    tmp.replace(path)
+
+
+def walk(items):
+    for item in items:
+        yield item
+        yield from walk(item.get("children", []))
+
+
+def all_items(state: dict):
+    for group in state.get("groups", []):
+        yield from walk(group.get("items", []))
+
+
+def find_item(state: dict, item_id: str) -> dict:
+    for item in all_items(state):
+        if item["id"] == item_id:
+            return item
+    die(f"no item {item_id}")
+
+
+def counts(state: dict) -> dict:
+    c = {s: 0 for s in STATUSES}
+    for item in all_items(state):
+        c[item.get("status", "needs-you")] = c.get(item.get("status", "needs-you"), 0) + 1
+    return c
+
+
+def read_feedback(entry: dict) -> list:
+    log = SHARE_ROOT / entry["key"] / ".feedback.jsonl"
+    if not log.exists():
+        return []
+    out = []
+    for line in log.read_text().splitlines():
+        if line.strip():
+            try:
+                out.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return out
+
+
+def text_arg(args) -> str:
+    if getattr(args, "text", None):
+        return args.text
+    data = sys.stdin.read()
+    if not data.strip():
+        die("empty text (pass --text or pipe it on stdin)")
+    return data.rstrip()
+
+
+# ---------------------------------------------------------------- commands
+
+def cmd_new(args) -> None:
+    if not PAGE.exists():
+        die(f"page template missing: {PAGE}")
+    url = subprocess.run([SHARE_CLI, "new", "--title", args.title, "--desc", args.desc or "Point-by-point discussion"],
+                         check=True, capture_output=True, text=True).stdout.strip()
+    key = url.rstrip("/").rsplit("/", 1)[-1]
+    subprocess.run([SHARE_CLI, "feedback", "on", key], check=True, capture_output=True, text=True)
+    folder = SHARE_ROOT / key
+    shutil.copy(PAGE, folder / "index.html")
+    (folder / "assets").mkdir(exist_ok=True)
+    state = {
+        "title": args.title,
+        "subtitle": args.subtitle or "",
+        "context": "",
+        "round": 1,
+        "processed_until": "",
+        "created": now(),
+        "groups": [],
+    }
+    entry = {"key": key, "slug": args.slug or "", "url": url, "title": args.title,
+             "cwd": os.getcwd(), "created": now(), "closed": False}
+    (folder / "state.json").write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n")
+    reg = load_registry()
+    reg["lists"].append(entry)
+    save_registry(reg)
+    clip_link(entry)
+    print(json.dumps({"key": key, "url": url, "state": str(folder / "state.json"),
+                      "assets": str(folder / "assets")}, ensure_ascii=False))
+
+
+def cmd_path(args) -> None:
+    print(state_path(resolve(args.ref)))
+
+
+def cmd_url(args) -> None:
+    print(resolve(args.ref)["url"])
+
+
+def cmd_page(args) -> None:
+    """Refresh the page template in an existing discussion (after the skill's page changed)."""
+    entry = resolve(args.ref)
+    shutil.copy(PAGE, SHARE_ROOT / entry["key"] / "index.html")
+    print(entry["url"])
+
+
+def cmd_pull(args) -> None:
+    entry = resolve(args.ref)
+    state = load_state(entry)
+    since = state.get("processed_until", "")
+    fresh = [e for e in read_feedback(entry) if e.get("at", "") > since]
+    if not fresh:
+        print("No new answers.")
+        return
+    by_item: dict = {}
+    for e in fresh:
+        data = e.get("data", {})
+        item_id = str(data.get("item") or GENERAL)
+        text = str(data.get("text", "")).strip()
+        if text:
+            by_item.setdefault(item_id, []).append((e["at"], text))
+    known = {i["id"] for i in all_items(state)}
+    for item_id, answers in by_item.items():
+        title = find_item(state, item_id)["title"] if item_id in known else ("General comment" if item_id == GENERAL else "unknown item")
+        print(f"## {item_id} — {title}")
+        for at, text in answers:
+            print(f"_{at}_\n{text}\n")
+    if args.merge:
+        general = state.setdefault("general", [])
+        for item_id, answers in by_item.items():
+            target = find_item(state, item_id).setdefault("thread", []) if item_id in known else general
+            for at, text in answers:
+                target.append({"who": "user", "round": state["round"], "at": at, "text": text,
+                               **({} if item_id in known or item_id == GENERAL else {"item": item_id})})
+            if item_id in known:
+                find_item(state, item_id)["status"] = "in-progress"
+        state["processed_until"] = max(e["at"] for e in fresh)
+        save_state(entry, state)
+        print(f"Merged answers: {sum(len(v) for v in by_item.values())}; items, including closed ones, moved to in-progress.")
+
+
+def cmd_reply(args) -> None:
+    entry = resolve(args.ref)
+    state = load_state(entry)
+    item = find_item(state, args.id)
+    item.setdefault("thread", []).append({"who": args.who, "round": state["round"], "at": now(), "text": text_arg(args)})
+    if args.status:
+        item["status"] = args.status
+    if args.resolution:
+        item["resolution"] = args.resolution
+    save_state(entry, state)
+    print(f"{args.id}: {item.get('status')}")
+
+
+def cmd_set(args) -> None:
+    entry = resolve(args.ref)
+    state = load_state(entry)
+    item = find_item(state, args.id)
+    if args.status:
+        item["status"] = args.status
+    if args.resolution is not None:
+        item["resolution"] = args.resolution
+    if args.action is not None:
+        item["action"] = {"state": args.action_state, "text": args.action} if args.action else None
+        if not args.action:
+            item.pop("action")
+    save_state(entry, state)
+    print(f"{args.id}: {item.get('status')}")
+
+
+def cmd_round(args) -> None:
+    entry = resolve(args.ref)
+    state = load_state(entry)
+    state["round"] = state.get("round", 1) + 1
+    save_state(entry, state)
+    print(f"round {state['round']}")
+
+
+def problems(state: dict) -> list:
+    errs = []
+    seen = set()
+    for g in state.get("groups", []):
+        if not re.fullmatch(r"[A-Z]", g.get("id", "")):
+            errs.append(f"group id must be one capital letter: {g.get('id')!r}")
+        def check(items, parent):
+            for it in items:
+                iid = it.get("id", "")
+                if not ID_RE.match(iid):
+                    errs.append(f"bad item id {iid!r}")
+                if iid in seen:
+                    errs.append(f"duplicate id {iid}")
+                seen.add(iid)
+                expected = parent if parent else g.get("id", "")
+                if parent and not iid.startswith(parent + "."):
+                    errs.append(f"{iid} must be a child of {parent} (e.g. {parent}.1)")
+                if not parent and not iid.startswith(expected):
+                    errs.append(f"{iid} is not in group {expected}")
+                for f in ("title", "body"):
+                    if not it.get(f):
+                        errs.append(f"{iid}: missing {f}")
+                if it.get("status", "needs-you") not in STATUSES:
+                    errs.append(f"{iid}: status must be one of {STATUSES}")
+                if it.get("status") == "closed" and not it.get("resolution"):
+                    errs.append(f"{iid}: closed item needs a one-line resolution")
+                for msg in it.get("thread", []):
+                    if msg.get("who") not in ("user", "ai"):
+                        errs.append(f"{iid}: thread message who must be user|ai")
+                    if msg.get("kind", "question") != "question":
+                        errs.append(f"{iid}: thread message kind can only be question")
+                check(it.get("children", []), iid)
+        check(g.get("items", []), "")
+    return errs
+
+
+def bodies_path(entry: dict) -> Path:
+    return SHARE_ROOT / entry["key"] / ".bodies.json"
+
+
+def keep_history(entry: dict, state: dict) -> bool:
+    """Item texts are rewritten between rounds; the wording the user answered must survive.
+
+    A snapshot of every body lives next to the page. When a body differs from it, the old
+    wording goes into the thread as a `question` message, right before the answers given to it.
+    Items without a `round` get the current one, so the page can tell which items are new.
+    """
+    path = bodies_path(entry)
+    snap = json.loads(path.read_text()) if path.exists() else {}
+    legacy = not snap and not any("round" in it for it in all_items(state))
+    changed = False
+    for item in all_items(state):
+        if "round" not in item:
+            item["round"] = 1 if legacy else state.get("round", 1)
+            changed = True
+        old = snap.get(item["id"])
+        if old and old["body"] != item.get("body"):
+            thread = item.setdefault("thread", [])
+            pos = next((i for i, m in enumerate(thread) if m.get("at", "") > old["since"]), len(thread))
+            thread.insert(pos, {"who": "ai", "kind": "question", "round": old["round"], "at": old["since"], "text": old["body"]})
+            changed = True
+        if not old or old["body"] != item.get("body"):
+            snap[item["id"]] = {"body": item.get("body", ""), "round": state.get("round", 1),
+                                "since": now()}
+    path.write_text(json.dumps(snap, ensure_ascii=False, indent=1) + "\n")
+    return changed
+
+
+def warnings(state: dict) -> list:
+    out = []
+    for item in all_items(state):
+        thread = item.get("thread", [])
+        if thread and thread[0].get("who") == "user":
+            out.append(f"{item['id']}: history starts with a reply, but the original wording was not saved "
+                       "(add it as the first message with kind=question)")
+    return out
+
+
+def cmd_check(args) -> None:
+    entry = resolve(args.ref)
+    state = load_state(entry)
+    if keep_history(entry, state):
+        save_state(entry, state)
+    errs = problems(state)
+    warns = warnings(state)
+    c = counts(state)
+    pending = [e for e in read_feedback(entry) if e.get("at", "") > state.get("processed_until", "")]
+    print(f"{entry['url']}\nround {state.get('round')}: awaiting you {c['needs-you']}, in progress {c['in-progress']}, "
+          f"closed {c['closed']}; unread answers {len(pending)}")
+    if warns:
+        print("Warnings:\n- " + "\n- ".join(warns))
+    if errs:
+        print("Errors:\n- " + "\n- ".join(errs))
+        sys.exit(1)
+
+
+def related(cwd: str, origin: str) -> bool:
+    """The discussion belongs to this session when the directories are the same or nested."""
+    cwd, origin = cwd.rstrip("/") or "/", origin.rstrip("/") or "/"
+    if cwd == origin or cwd.startswith(origin + "/"):
+        return True
+    broad = {"/", str(Path.home())}
+    return cwd not in broad and origin.startswith(cwd + "/")
+
+
+def hook_cwd() -> str:
+    """UserPromptSubmit passes the session's cwd as JSON on stdin; fall back to ours."""
+    if sys.stdin.isatty():
+        return os.getcwd()
+    try:
+        return json.loads(sys.stdin.read() or "{}").get("cwd") or os.getcwd()
+    except json.JSONDecodeError:
+        return os.getcwd()
+
+
+def cmd_status(args) -> None:
+    reg = load_registry()
+    cwd = hook_cwd() if args.hook else os.getcwd()
+    rows = []
+    for e in reg["lists"]:
+        if e.get("closed") and not args.all:
+            continue
+        if not args.all and not related(cwd, e.get("cwd", "")):
+            continue
+        try:
+            state = load_state(e)
+        except FileNotFoundError:
+            continue
+        if not e.get("closed"):
+            sync_page(e)
+            clip_link(e)
+        c = counts(state)
+        pending = len([f for f in read_feedback(e) if f.get("at", "") > state.get("processed_until", "")])
+        open_items = c["needs-you"] + c["in-progress"]
+        if open_items == 0 and pending == 0 and not args.all:
+            continue
+        rows.append((e, c, pending))
+    if args.hook:
+        if not rows:
+            return
+        lines = ["[discuss] Open point-by-point discussions. While any items remain open, "
+                 "end the last message of every response with 'Questions: <url>'—the link alone. "
+                 "Do not repeat the questions unless asked. If the user says they replied or asks to check, "
+                 "run `dq pull <key> --merge` and process the round using the discuss skill. In live mode, run `dq watch <key>` in the background; on NEW ANSWERS, pull --merge, reply to each item with `dq reply`, and watch again."]
+        for e, c, pending in rows:
+            watch = "watcher running" if watcher_alive(e) else "watcher NOT running—start `dq watch` in the background"
+            lines.append(f"- {e['title']}: {e['url']} (key {e['key'][:8]}; awaiting answers {c['needs-you']}, "
+                         f"in progress {c['in-progress']}, unread answers {pending}; {watch})")
+        print("\n".join(lines))
+        return
+    if not rows:
+        print("No open discussions.")
+        return
+    for e, c, pending in rows:
+        print(f"{e['key'][:8]}  {e['title']}\n  {e['url']}\n  awaiting you {c['needs-you']} · in progress {c['in-progress']} · "
+              f"closed {c['closed']} · unread answers {pending}{' · fully closed' if e.get('closed') else ''}")
+
+
+def watch_pid_path(entry: dict) -> Path:
+    return SHARE_ROOT / entry["key"] / ".watch.pid"
+
+
+def watcher_alive(entry: dict) -> bool:
+    try:
+        pid = int(watch_pid_path(entry).read_text().strip())
+        os.kill(pid, 0)
+        return True
+    except (FileNotFoundError, ValueError, ProcessLookupError, PermissionError):
+        return False
+
+
+def cmd_watch(args) -> None:
+    """Block until the page sends new answers, then print them and exit.
+
+    Run in the background: the exiting process is what wakes the agent. One watcher per
+    discussion; answers arriving in a burst are collected until `--settle` seconds of quiet.
+    """
+    import time
+    entry = resolve(args.ref)
+    pid_path = watch_pid_path(entry)
+    if watcher_alive(entry):
+        print(f"ALREADY WATCHED {entry['key'][:8]} (pid {pid_path.read_text().strip()}) — no second watcher needed")
+        sys.exit(3)
+    pid_path.write_text(str(os.getpid()))
+    try:
+        deadline = time.time() + args.max * 60
+        first_seen = None
+        seen_count = 0
+        while True:
+            state = load_state(entry)
+            fresh = [e for e in read_feedback(entry) if e.get("at", "") > state.get("processed_until", "")]
+            now = time.time()
+            if fresh:
+                if len(fresh) != seen_count:
+                    seen_count, last_change = len(fresh), now
+                    first_seen = first_seen or now
+                quiet = now - last_change >= args.settle
+                too_long = now - first_seen >= args.settle * 4
+                if quiet or too_long:
+                    ids = []
+                    for e in fresh:
+                        i = str(e.get("data", {}).get("item") or GENERAL)
+                        if i not in ids:
+                            ids.append(i)
+                    print(f"NEW ANSWERS {entry['key'][:8]} «{entry['title']}»: {', '.join(ids)} ({len(fresh)} items)")
+                    print(f"Next: dq pull {entry['key'][:8]} --merge, reply to each item, then restart dq watch in the background.")
+                    return
+            elif now >= deadline:
+                print(f"WATCH TIMEOUT {entry['key'][:8]}: no new answers. Restart dq watch in the background if the discussion is still open.")
+                return
+            time.sleep(args.interval)
+    finally:
+        try:
+            if pid_path.read_text().strip() == str(os.getpid()):
+                pid_path.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def cmd_close(args) -> None:
+    reg = load_registry()
+    entry = resolve(args.ref)
+    for e in reg["lists"]:
+        if e["key"] == entry["key"]:
+            e["closed"] = True
+    save_registry(reg)
+    print(f"closed {entry['url']}")
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(prog="dq", description=__doc__)
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    s = sub.add_parser("new", help="create a discussion share and print its key/url/state path")
+    s.add_argument("--title", required=True)
+    s.add_argument("--subtitle")
+    s.add_argument("--desc")
+    s.add_argument("--slug")
+    s.set_defaults(fn=cmd_new)
+
+    for name, fn, hlp in (("path", cmd_path, "path to state.json"), ("url", cmd_url, "page URL"),
+                          ("page", cmd_page, "refresh the page template"), ("round", cmd_round, "start the next round"),
+                          ("check", cmd_check, "validate state.json and print counters"),
+                          ("close", cmd_close, "stop reminding about this discussion")):
+        s = sub.add_parser(name, help=hlp)
+        s.add_argument("ref")
+        s.set_defaults(fn=fn)
+
+    s = sub.add_parser("pull", help="print answers sent since the last merge")
+    s.add_argument("ref")
+    s.add_argument("--merge", action="store_true", help="append them to item threads and advance the cursor")
+    s.set_defaults(fn=cmd_pull)
+
+    s = sub.add_parser("reply", help="append a message to an item thread (text on stdin or --text)")
+    s.add_argument("ref")
+    s.add_argument("id")
+    s.add_argument("--text")
+    s.add_argument("--who", default="ai", choices=("ai", "user"), help="user = an answer given in chat, not on the page")
+    s.add_argument("--status", choices=STATUSES)
+    s.add_argument("--resolution")
+    s.set_defaults(fn=cmd_reply)
+
+    s = sub.add_parser("set", help="change an item's status / resolution / running action")
+    s.add_argument("ref")
+    s.add_argument("id")
+    s.add_argument("--status", choices=STATUSES)
+    s.add_argument("--resolution")
+    s.add_argument("--action", help="what a subagent is doing for this item; empty string clears it")
+    s.add_argument("--action-state", default="running", choices=("running", "done", "failed"))
+    s.set_defaults(fn=cmd_set)
+
+    s = sub.add_parser("watch", help="wait in the background for new answers from the page, print them and exit")
+    s.add_argument("ref")
+    s.add_argument("--settle", type=int, default=20, help="seconds of quiet before reporting a burst of answers")
+    s.add_argument("--interval", type=int, default=2)
+    s.add_argument("--max", type=int, default=115, help="minutes before giving up (background tasks are capped at 120)")
+    s.set_defaults(fn=cmd_watch)
+
+    s = sub.add_parser("status", help="open discussions for this directory")
+    s.add_argument("--all", action="store_true")
+    s.add_argument("--hook", action="store_true", help="print a reminder for the UserPromptSubmit hook")
+    s.set_defaults(fn=cmd_status)
+
+    args = p.parse_args()
+    args.fn(args)
+
+
+if __name__ == "__main__":
+    main()

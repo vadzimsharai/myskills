@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Discussion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" id="hl-light" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<link rel="stylesheet" id="hl-dark" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" disabled>
+<script>
+  // Theme before first paint, so a stored choice never flashes the other palette.
+  try { const t = localStorage.getItem('dq:theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+</script>
+<style>
+/* Layout: navigation rail + wide reading area; an open item splits into text (left) and a sticky answer panel (right) */
+:root{
+  --bg:#f7f7f4; --surface:#ffffff; --sunk:#f0f0ec; --line:#e4e4de; --line-strong:#d3d3cb;
+  --fg:#22231f; --muted:#6b6d66; --faint:#9a9c94;
+  --accent:#2f6b5d; --accent-ink:#ffffff; --accent-soft:#e3efeb;
+  --wait:#c25a1a; --sent:#b8930a; --work:#3e6aa8; --done:#5c8a5e;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:10px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141614; --surface:#1b1e1b; --sunk:#202420; --line:#2a2f2a; --line-strong:#384038;
+  --fg:#e6e8e3; --muted:#a2a79f; --faint:#737a71;
+  --accent:#78c2ad; --accent-ink:#0f1512; --accent-soft:#1f2e29;
+  --wait:#ee9a5c; --sent:#e8cc5a; --work:#8fb2e6; --done:#8cbf8e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141614; --surface:#1b1e1b; --sunk:#202420; --line:#2a2f2a; --line-strong:#384038;
+  --fg:#e6e8e3; --muted:#a2a79f; --faint:#737a71;
+  --accent:#78c2ad; --accent-ink:#0f1512; --accent-soft:#1f2e29;
+  --wait:#ee9a5c; --sent:#e8cc5a; --work:#8fb2e6; --done:#8cbf8e; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.72 var(--f-body);-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+code{font:.86em var(--f-mono);background:var(--sunk);padding:1px 5px;border-radius:4px}
+pre{background:var(--sunk);padding:12px 14px;border-radius:8px;overflow-x:auto;margin:12px 0}
+pre code,pre code.hljs{background:transparent;padding:0;font-size:.84em}
+table{border-collapse:collapse;font-size:.92em;display:block;overflow-x:auto;margin:12px 0}
+th,td{border-bottom:1px solid var(--line);padding:6px 12px 6px 0;text-align:left;vertical-align:top}
+th{font-weight:600;color:var(--muted)}
+img{max-width:100%;border-radius:6px}
+blockquote{margin:10px 0;padding:2px 14px;border-left:2px solid var(--line-strong);color:var(--muted)}
+.md>:first-child{margin-top:0}.md>:last-child{margin-bottom:0}
+.md p{margin:0 0 1.05em}
+.md ul,.md ol{margin:0 0 1.05em;padding-left:1.3em}
+.md li{margin:.25em 0}
+.md strong{font-weight:600}
+.md{overflow-wrap:break-word}
+
+/* shell */
+.shell{display:grid;grid-template-columns:280px minmax(0,1fr);gap:56px;padding-inline:32px;padding-block:40px 140px}
+@media (max-width:700px){
+  details.item>summary{grid-template-columns:14px 3em minmax(0,1fr)}
+  .state{grid-column:3 / -1;flex-wrap:wrap;white-space:normal}
+  .progress{gap:2px 14px;line-height:1.5}
+  .progress .bar{flex-basis:100%;order:-1}
+}
+@media (max-width:960px){.shell{grid-template-columns:minmax(0,1fr);gap:0;padding-inline:16px;padding-block:24px 120px}
+  details.item>summary{padding:14px 16px}
+  .ibody{margin:0 16px}}
+
+/* rail */
+.rail{position:sticky;top:20px;align-self:start;max-height:calc(100vh - 40px);overflow:auto;padding-right:6px;font-size:.9rem;scrollbar-width:thin}
+.rail .g{margin:0 0 22px}
+.rail .gh{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:.78rem;font-weight:600;letter-spacing:.02em;margin:0 0 4px;padding:0 8px}
+.rail .gh span:last-child{font-variant-numeric:tabular-nums;font-weight:500;color:var(--faint)}
+.rail a{display:grid;grid-template-columns:12px minmax(3.1em,max-content) minmax(0,1fr);align-items:baseline;gap:4px 6px;padding:5px 8px;border-radius:6px;text-decoration:none;color:var(--fg)}
+.rail a:hover{background:var(--sunk)}
+.rail a.cur{background:var(--accent-soft)}
+.rail a.sub{padding-left:22px}
+.rail .rid{font:500 .78rem var(--f-mono);color:var(--muted)}
+.rail .rt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rail a.s-closed .rt{color:var(--faint)}
+.mark{font-size:.7rem;line-height:1;text-align:center}
+.mark.s-needs-you::before{content:"●";color:var(--wait)}
+.mark.s-in-progress::before{content:"●";color:var(--work)}
+.mark.s-sent::before{content:"●";color:var(--sent)}
+.mark.s-closed::before{content:"✓";color:var(--done)}
+@media (max-width:960px){
+  .rail{position:fixed;inset:0 auto 0 0;width:min(320px,86vw);max-height:none;z-index:20;background:var(--surface);border-right:1px solid var(--line);padding:20px 12px calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-105%);transition:transform .2s}
+  .rail.open{transform:none;box-shadow:0 0 0 100vmax rgba(0,0,0,.25)}
+}
+
+/* header */
+header.top{margin-bottom:36px;padding-bottom:28px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:.8rem;color:var(--muted);margin:0 0 6px}
+header.top h1{font-size:1.65rem;line-height:1.2;font-weight:600;margin:0 0 6px;text-wrap:balance}
+.sub-t{color:var(--muted);margin:0 0 20px}
+.progress{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:.88rem;color:var(--muted)}
+.bar{flex:0 1 220px;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--done);border-radius:3px}
+.progress b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:22px}
+.seg{display:inline-flex;background:var(--sunk);border-radius:8px;padding:3px}
+.seg button{border:0;background:transparent;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:.88rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.search{flex:1 1 220px;min-width:0;max-width:420px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;font:inherit;font-size:.9rem;color:var(--fg)}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:.88rem;color:var(--muted);white-space:nowrap}
+.icon-btn:hover{color:var(--fg);border-color:var(--line-strong)}
+.navbtn{display:none}
+@media (max-width:960px){.navbtn{display:inline-block}}
+.spacer{flex:1}
+
+.note{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;margin:12px 0;font-size:.92rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+details.ctx{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:14px 20px;margin:0 0 12px}
+details.ctx>summary{cursor:pointer;color:var(--muted);font-size:.92rem}
+details.ctx[open]>summary{margin-bottom:10px}
+
+/* groups & items */
+section.group{margin:56px 0 0;padding-top:32px;border-top:1px solid var(--line)}
+section.group:first-child{border-top:0;padding-top:0;margin-top:32px}
+section.group>h2{font-size:1.15rem;font-weight:600;margin:0 0 6px;display:flex;gap:10px;align-items:baseline}
+section.group>h2 .gid{font:500 .9rem var(--f-mono);color:var(--muted)}
+section.group>h2 .gcount{margin-left:auto;font-size:.8rem;font-weight:400;color:var(--faint);font-variant-numeric:tabular-nums}
+.gintro{color:var(--muted);margin:6px 0 4px;font-size:.94rem}
+.items{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+
+details.item,#general{scroll-margin-top:clamp(56px,14vh,140px)}
+details.item{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);transition:border-color .15s}
+details.item[open]{border-color:var(--line-strong)}
+details.item>summary{list-style:none;cursor:pointer;padding:16px 22px;display:grid;grid-template-columns:14px 3.4em minmax(0,1fr) auto;gap:4px 10px;align-items:baseline;border-radius:var(--r)}
+details.item>summary:hover{background:var(--sunk)}
+details.item>summary::-webkit-details-marker{display:none}
+.iid{font:500 .84rem var(--f-mono);color:var(--muted)}
+.ttl{font-weight:500;min-width:0}
+details.item.s-closed .ttl{color:var(--muted)}
+.state{font-size:.8rem;color:var(--faint);white-space:nowrap;display:flex;gap:8px;align-items:baseline}
+.state .n{color:var(--accent);font-weight:500}
+.state .w{color:var(--wait)} .state .y{color:var(--sent)} .state .p{color:var(--work)} .state .d{color:var(--done)}
+.preview{grid-column:3 / -1;font-size:.88rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+details.item[open] .preview{display:none}
+.tag{font-size:.74rem;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:0 7px}
+
+.ibody{margin:0 22px;padding:22px 0 26px;border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr);gap:28px}
+@media (min-width:1300px){.ibody{grid-template-columns:minmax(0,1fr) minmax(300px,360px);gap:48px}}
+@media (min-width:1300px){.ibody.wide{grid-template-columns:minmax(0,1fr)}.ibody.wide .col-answer{position:static}}
+.col-text{min-width:0}
+.resolution{font-size:.94rem;margin:0 0 18px;padding:8px 12px;border-radius:8px;background:var(--accent-soft)}
+.resolution b{font-weight:600}
+.action{font-size:.88rem;color:var(--work);margin:0 0 12px}
+details.more{margin:22px 0 0}
+details.more>summary{cursor:pointer;color:var(--accent);font-size:.9rem;list-style:none}
+details.more>summary::before{content:"＋ "}
+details.more[open]>summary::before{content:"− "}
+details.more>.md{margin-top:14px;padding-top:16px;border-top:1px dashed var(--line)}
+
+.thread{margin:28px 0 0;padding-top:22px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:18px}
+.msg{padding-left:14px;border-left:2px solid var(--line)}
+.msg .who{font-size:.76rem;color:var(--faint);margin-bottom:2px}
+.msg .who b{font-weight:600}
+.msg.user .who b{color:var(--wait)} .msg.ai .who b{color:var(--work)}
+.msg.pending{border-left-style:dashed}
+.older{border:0;background:none;padding:0;color:var(--muted);font-size:.84rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px;align-self:flex-start}
+.msg.q{border-left-style:dotted}
+.msg.q>summary{cursor:pointer;list-style:none;font-size:.76rem;color:var(--faint)}
+.msg.q>summary::-webkit-details-marker{display:none}
+.msg.q>summary::before{content:'▸ ';color:var(--faint)}
+.msg.q[open]>summary::before{content:'▾ '}
+.msg.q>.md{color:var(--muted);margin-top:4px}
+.tag.new{color:var(--accent);border-color:var(--accent)}
+details.item.child{margin-left:28px;position:relative}
+details.item.child::before{content:'';position:absolute;left:-16px;top:-10px;bottom:50%;width:10px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);border-bottom-left-radius:6px}
+.parent-ref{font-size:.74rem;color:var(--faint);margin-right:6px;white-space:nowrap}
+@media (max-width:700px){details.item.child{margin-left:14px}details.item.child::before{left:-10px;width:6px}}
+
+.col-answer{min-width:0}
+@media (min-width:1300px){.col-answer{position:sticky;top:20px;align-self:start}}
+.answer{display:flex;flex-direction:column;gap:12px}
+.answer label{font-size:.8rem;color:var(--muted)}
+.answer textarea{width:100%;min-height:96px;resize:vertical;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:9px 11px;font:inherit;font-size:.94rem;line-height:1.5}
+.answer textarea:focus{border-color:var(--accent);outline:none;background:var(--surface)}
+.quick{display:flex;flex-wrap:wrap;gap:4px 12px}
+.quick button{border:0;background:none;padding:0;color:var(--muted);font-size:.84rem;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px}
+.quick button:hover{color:var(--fg)}
+.arow{display:flex;align-items:center;gap:10px}
+.arow .hint{font-size:.78rem;color:var(--faint);margin-right:auto}
+.btn{border:0;background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:7px 16px;font-weight:600;font-size:.9rem;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:default}
+.closed-note{font-size:.8rem;color:var(--done);margin:0 0 8px}
+.reopen{border:0;background:none;padding:0;color:var(--muted);font-size:.86rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+section.general{margin-top:40px}
+section.general h2{font-size:1.08rem;font-weight:600;margin:0 0 10px}
+section.general .answer{max-width:720px}
+
+/* draft pill */
+.pill-bar{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:12px;align-items:center;background:var(--fg);color:var(--bg);border-radius:999px;padding:8px 8px 8px 18px;box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:.9rem;z-index:15;max-width:calc(100vw - 32px)}
+.pill-bar .btn{background:var(--bg);color:var(--fg);border-radius:999px}
+.pill-bar[hidden]{display:none}
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--surface);color:var(--fg);border:1px solid var(--line);padding:8px 14px;border-radius:8px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:16}
+.toast.on{opacity:1}
+.mermaid{overflow-x:auto;margin:12px 0}
+.hidden-by-filter{display:none!important}
+@keyframes dq-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(1.6)}}
+.mark.fresh::before{display:inline-block;animation:dq-pulse 1.6s ease-in-out infinite}
+@keyframes dq-flash{from{background:var(--accent-soft)}to{background:transparent}}
+.msg.flash{animation:dq-flash 3s ease-out;border-radius:0 6px 6px 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.mark.fresh::before,.msg.flash{animation:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="Items"></nav>
+  <main id="main">
+    <header class="top">
+      <p class="eyebrow" id="eyebrow">Point-by-point discussion</p>
+      <h1 id="title">Loading…</h1>
+      <p class="sub-t" id="subtitle"></p>
+      <div class="progress" id="progress"></div>
+      <div class="toolbar">
+        <button class="icon-btn navbtn" id="navbtn" type="button">☰ Items</button>
+        <div class="seg" role="group" aria-label="Filter">
+          <button type="button" data-filter="open" aria-pressed="true">Open</button>
+          <button type="button" data-filter="all" aria-pressed="false">All</button>
+          <button type="button" data-filter="closed" aria-pressed="false">Closed</button>
+        </div>
+        <input class="search" id="search" type="search" placeholder="Search" aria-label="Search items">
+        <span class="spacer"></span>
+        <button class="icon-btn" id="expand" type="button">Expand all</button>
+        <button class="icon-btn" id="toGeneral" type="button">Comment</button>
+        <button class="icon-btn" id="theme" type="button" aria-label="Theme">◐ System</button>
+      </div>
+    </header>
+    <div class="note" id="sentnote" hidden>Answers sent. Tell the assistant in chat that you have replied; it will read them and prepare the next round.</div>
+    <details class="ctx" id="ctx" hidden><summary>Context</summary><div class="md" id="ctxbody"></div></details>
+    <div id="groups"></div>
+    <section class="general" id="general">
+      <h2>Comment on the whole list</h2>
+      <div id="generalThread"></div>
+      <div class="answer">
+        <textarea id="ans-_general" data-item="_general" placeholder="New question or comment about the whole list"></textarea>
+        <div class="arow"><span class="hint">Ctrl+Enter to send</span><button class="btn" type="button" data-send="_general">Send</button></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="pill-bar" id="pill" hidden><span id="pilltext"></span><button class="btn" type="button" id="sendAll">Send</button></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+<script>
+(() => {
+  const STATUS = { 'needs-you': 'awaiting you', 'sent': 'you replied', 'in-progress': 'AI is working', 'closed': 'resolved' };
+  const STATE_CLASS = { 'needs-you': 'w', 'sent': 'y', 'in-progress': 'p', 'closed': 'd' };
+  // An answer sent from the page but not yet read by the AI shows as its own state.
+  const shown = it => { const st = it.status || 'needs-you'; return st !== 'closed' && pendingFor(it.id).length ? 'sent' : st; };
+  // "Fresh" = the AI wrote into an item since this browser last opened it; the dot pulses until then.
+  const byId = new Map();
+  const aiCount = it => (it.thread || []).filter(m => m.who === 'ai' && m.kind !== 'question').length;
+  const seenKey = id => 'seen:' + id;
+  const isFresh = it => { const v = store.get(seenKey(it.id)); return v === '' ? !!store.get('init') : aiCount(it) > Number(v); };
+  const isNewItem = it => !!it.round && it.round === state.round && state.round > 1;
+  function markSeen(id) {
+    const it = byId.get(id);
+    if (!it || !isFresh(it)) return false;
+    store.set(seenKey(id), String(aiCount(it)));
+    document.querySelectorAll(`[data-fresh="${CSS.escape(id)}"]`).forEach(n => { n.classList.remove('fresh'); if (n.classList.contains('n')) n.remove(); });
+    return true;
+  }
+  function freshIds() { const out = []; byId.forEach((it, id) => { if (isFresh(it)) out.push(id); }); return out; }
+  const QUICK = ['Agree', 'Disagree, because ', 'Explain further', 'Ready to close'];
+  const THEMES = ['system', 'light', 'dark'];
+  const THEME_LABEL = { system: '◐ System', light: '☀ Light', dark: '☾ Dark' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const store = {
+    key: id => 'dq:' + location.pathname + ':' + id,
+    get(id) { try { return localStorage.getItem(this.key(id)) || ''; } catch { return ''; } },
+    set(id, v) { try { v ? localStorage.setItem(this.key(id), v) : localStorage.removeItem(this.key(id)); } catch {} },
+  };
+
+  let state = null, pending = [], filter = 'open', query = '';
+  const pinned = new Set();
+  const THREAD_TAIL = 5;
+  const fullThreads = new Set();
+
+  // ---------- theme
+  function isDark() {
+    const t = document.documentElement.dataset.theme;
+    return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function currentTheme() { return document.documentElement.dataset.theme || 'system'; }
+  function applyTheme(t) {
+    if (t === 'system') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+    try { t === 'system' ? localStorage.removeItem('dq:theme') : localStorage.setItem('dq:theme', t); } catch {}
+    $('theme').textContent = THEME_LABEL[t];
+    syncHighlightTheme();
+    redrawDiagrams();
+  }
+  function syncHighlightTheme() {
+    const d = isDark();
+    $('hl-light').disabled = d; $('hl-dark').disabled = !d;
+    mermaid.initialize({ startOnLoad: false, theme: d ? 'dark' : 'neutral', securityLevel: 'strict',
+      fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif', flowchart: { htmlLabels: false } });
+  }
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (currentTheme() === 'system') { syncHighlightTheme(); redrawDiagrams(); } });
+
+  // ---------- markdown & diagrams
+  function fitTables() {
+    document.querySelectorAll('details.item[open] > .ibody:not(.wide)').forEach(body => {
+      if ([...body.querySelectorAll(':scope > .col-text table')].some(table => table.scrollWidth > table.clientWidth)) body.classList.add('wide');
+    });
+  }
+  function md(text) {
+    if (!text) return '';
+    const box = document.createElement('div');
+    box.innerHTML = DOMPurify.sanitize(marked.parse(String(text), { gfm: true, breaks: true }));
+    box.querySelectorAll('pre code.language-mermaid').forEach(code => {
+      const div = document.createElement('div');
+      div.className = 'mermaid';
+      div.dataset.src = code.textContent;
+      code.parentElement.replaceWith(div);
+    });
+    box.querySelectorAll('td code, th code').forEach(code => { code.innerHTML = esc(code.textContent).replace(/([/.,{_|])(?=\S)/g, '$1<wbr>'); });
+    return box.innerHTML;
+  }
+  // mermaid.render lays a diagram out off-screen, so diagrams inside collapsed <details> come out
+  // right; one at a time, or concurrent layouts measure each other.
+  let diagramSeq = 0;
+  function drawDiagrams() {
+    const nodes = [...document.querySelectorAll('.mermaid:not([data-queued])')];
+    nodes.forEach(n => { n.dataset.queued = '1'; });
+    drawDiagrams.chain = (drawDiagrams.chain || document.fonts.ready).then(async () => {
+      for (const n of nodes) {
+        try { n.innerHTML = (await mermaid.render('dq-diagram-' + (++diagramSeq), n.dataset.src)).svg; }
+        catch { n.innerHTML = '<pre><code>' + esc(n.dataset.src) + '</code></pre>'; }
+      }
+    });
+  }
+  function redrawDiagrams() {
+    document.querySelectorAll('.mermaid').forEach(n => { delete n.dataset.queued; n.innerHTML = ''; });
+    drawDiagrams();
+  }
+
+  // ---------- data helpers
+  function walk(items, fn, depth = 0) { (items || []).forEach(it => { fn(it, depth); walk(it.children, fn, depth + 1); }); }
+  function flatItems(items) { const out = []; const go = (list, parentId) => (list || []).forEach(it => { out.push([it, parentId]); go(it.children, it.id); }); go(items, ''); return out; }
+  function everyItem(fn) { (state.groups || []).forEach(g => walk(g.items, fn)); }
+  function pendingFor(id) { return pending.filter(p => (p.data?.item || '_general') === id); }
+  function fmtTime(at) {
+    const d = new Date(at);
+    return at && !isNaN(d) ? d.toLocaleString('en-US', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+  }
+  function plain(mdText) { return String(mdText || '').replace(/[*_`>#\[\]]/g, '').replace(/\s+/g, ' ').trim(); }
+  // One line under a collapsed title: the item's own question, else its first sentence.
+  function preview(it) {
+    const body = String(it.body || '');
+    const m = body.match(/What I need from you[^:]*:\**\s*([\s\S]*?)(\n\n|$)/i);
+    const text = plain(m ? m[1] : body.split(/\n\n/)[0]);
+    return text.length > 160 ? text.slice(0, 157) + '…' : text;
+  }
+  function counts(items) {
+    let total = 0, closed = 0;
+    walk(items, it => { total++; if (it.status === 'closed') closed++; });
+    return { total, closed };
+  }
+
+  // ---------- render
+  function msgHTML(m) {
+    if (m.kind === 'question') return `<details class="msg q"><summary>Question from round ${esc(m.round)} — wording when you replied</summary><div class="md">${md(m.text)}</div></details>`;
+    return `<div class="msg ${m.who === 'user' ? 'user' : 'ai'}">
+      <div class="who"><b>${m.who === 'user' ? 'You' : 'AI'}</b> · round ${esc(m.round)}${m.at ? ' · ' + fmtTime(m.at) : ''}${m.item ? ' · about ' + esc(m.item) : ''}</div>
+      <div class="md">${md(m.text)}</div></div>`;
+  }
+  function pendingHTML(p) {
+    return `<div class="msg user pending"><div class="who"><b>You</b> · sent ${fmtTime(p.at)} · AI has not read it yet</div><div class="md">${md(p.data?.text)}</div></div>`;
+  }
+  function answerHTML(it) {
+    const id = esc(it.id);
+    const closed = it.status === 'closed';
+    const draft = store.get(it.id);
+    const keep = closed && (draft || pinned.has(it.id));
+    if (closed && !keep) return `<button class="reopen" type="button" data-reopen="${id}">Return to this item and add a comment</button>`;
+    return `<div class="answer">${keep ? '<p class="closed-note">AI closed this item. You can still reply and reopen it.</p>' : ''}
+      <label for="ans-${id}">Your answer</label>
+      <textarea id="ans-${id}" data-item="${id}" placeholder="Answer, clarification, or question">${esc(draft)}</textarea>
+      <div class="quick">${QUICK.map(q => `<button type="button" data-quick="${esc(q)}" data-for="${id}">${esc(q.trim())}</button>`).join('')}</div>
+      <div class="arow"><span class="hint">Ctrl+Enter to send</span><button class="btn" type="button" data-send="${id}">Send</button></div>
+    </div>`;
+  }
+  function itemHTML(it, open, parentId = '') {
+    const st = it.status || 'needs-you';
+    const pend = pendingFor(it.id);
+    const tags = (it.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+    const messages = [...(it.thread || []).map(msgHTML), ...pend.map(pendingHTML)];
+    const hidden = fullThreads.has(it.id) ? 0 : Math.max(messages.length - THREAD_TAIL, 0);
+    const thread = (hidden ? `<button class="older" type="button" data-older="${esc(it.id)}">Show ${hidden} earlier ${hidden === 1 ? 'message' : 'messages'}</button>` : '') + messages.slice(hidden).join('');
+    return `
+    <details class="item s-${st}${parentId ? ' child' : ''}" id="i-${esc(it.id)}" data-id="${esc(it.id)}"${parentId ? ` data-parent="${esc(parentId)}"` : ''} data-status="${st}"${open ? ' open' : ''}>
+      <summary>
+        <span class="mark s-${shown(it)}${isFresh(it) ? ' fresh' : ''}" data-fresh="${esc(it.id)}"></span>
+        <span class="iid">${esc(it.id)}</span>
+        <span class="ttl">${esc(it.title)}</span>
+        <span class="state">${parentId ? `<span class="parent-ref">re: ${esc(parentId)}</span>` : ''}${tags}${isNewItem(it) ? '<span class="tag new">new item</span>' : ''}${isFresh(it) && !isNewItem(it) ? `<span class="n" data-fresh="${esc(it.id)}">${store.get(seenKey(it.id)) === '' ? 'new item' : 'new AI reply'}</span>` : ''}<span class="${STATE_CLASS[shown(it)] || ''}">${STATUS[shown(it)] || st}</span></span>
+        ${st !== 'closed' ? `<span class="preview">${esc(preview(it))}</span>` : (it.resolution ? `<span class="preview">Outcome: ${esc(it.resolution)}</span>` : '')}
+      </summary>
+      <div class="ibody">
+        <div class="col-text">
+          ${st === 'closed' && it.resolution ? `<div class="resolution"><b>Outcome.</b> ${esc(it.resolution)}</div>` : ''}
+          ${it.action ? `<div class="action">${it.action.state === 'done' ? 'Done' : it.action.state === 'failed' ? 'Failed' : 'In progress'}: ${esc(it.action.text)}</div>` : ''}
+          <div class="md">${md(it.body)}</div>
+          ${it.details ? `<details class="more"><summary>Details: diagrams, examples, code</summary><div class="md">${md(it.details)}</div></details>` : ''}
+          ${thread ? `<div class="thread">${thread}</div>` : ''}
+        </div>
+        <div class="col-answer">${answerHTML(it)}</div>
+      </div>
+    </details>`;
+  }
+
+  function render(soft = false) {
+    byId.clear(); everyItem(it => byId.set(it.id, it));
+    document.title = state.title || 'Discussion';
+    $('title').textContent = state.title || 'Discussion';
+    $('subtitle').textContent = state.subtitle || '';
+    $('eyebrow').textContent = `Point-by-point discussion · round ${state.round || 1}`;
+    if (state.context) { $('ctx').hidden = false; $('ctxbody').innerHTML = md(state.context); }
+
+    const c = { 'needs-you': 0, sent: 0, 'in-progress': 0, closed: 0 };
+    let total = 0;
+    everyItem(it => { total++; c[shown(it)]++; });
+    $('progress').innerHTML = `
+      <span>Resolved <b>${c.closed}</b> of <b>${total}</b></span>
+      <span class="bar" aria-hidden="true"><i style="width:${total ? Math.round(c.closed / total * 100) : 0}%"></i></span>
+      <span>awaiting you <b>${c['needs-you']}</b></span>
+      ${c['in-progress'] ? `<span>AI is working <b>${c['in-progress']}</b></span>` : ''}
+      ${c.sent ? `<span>you replied <b>${c.sent}</b> — AI has not read it yet</span>` : ''}
+      <span>updated ${fmtTime(state.updated)}</span>`;
+
+    // Only the first item that waits for an answer starts open; the rest stay one line each.
+    let firstOpen = null;
+    everyItem(it => { if (!firstOpen && shown(it) === 'needs-you') firstOpen = it.id; });
+    const hashId = decodeURIComponent(location.hash.replace(/^#i-/, ''));
+
+    $('groups').innerHTML = (state.groups || []).map(g => {
+      const k = counts(g.items);
+      return `<section class="group" id="g-${esc(g.id)}">
+        <h2><span class="gid">${esc(g.id)}</span>${esc(g.title)}<span class="gcount">${k.closed} of ${k.total}</span></h2>
+        ${g.intro ? `<div class="gintro md">${md(g.intro)}</div>` : ''}
+        <div class="items">${flatItems(g.items).map(([it, parentId]) => itemHTML(it, !soft && (it.id === (hashId || firstOpen) || !!store.get(it.id)), parentId)).join('')}</div>
+      </section>`;
+    }).join('');
+
+    $('generalThread').innerHTML = (state.general || []).length || pendingFor('_general').length
+      ? `<div class="thread" style="margin:0 0 16px">${(state.general || []).map(msgHTML).join('')}${pendingFor('_general').map(pendingHTML).join('')}</div>` : '';
+
+    $('rail').innerHTML = (state.groups || []).map(g => {
+      const k = counts(g.items);
+      let links = '';
+      walk(g.items, (it, d) => {
+        links += `<a href="#i-${esc(it.id)}" class="${d ? 'sub ' : ''}s-${shown(it)}" data-jump="${esc(it.id)}"><span class="mark s-${shown(it)}${isFresh(it) ? ' fresh' : ''}" data-fresh="${esc(it.id)}"></span><span class="rid">${esc(it.id)}</span><span class="rt">${esc(it.title)}</span></a>`;
+      });
+      return `<div class="g"><div class="gh"><span>${esc(g.id)}. ${esc(g.title)}</span><span>${k.closed}/${k.total}</span></div>${links}</div>`;
+    }).join('');
+
+    document.querySelectorAll('#groups pre code, #ctxbody pre code').forEach(el => hljs.highlightElement(el));
+    drawDiagrams();
+    fitTables();
+    applyFilter();
+    syncPill();
+    markCurrent();
+  }
+
+  function applyFilter() {
+    const q = query.trim().toLowerCase();
+    const keep = new Set();
+    [...document.querySelectorAll('details.item')].reverse().forEach(el => {
+      const st = el.dataset.status;
+      let show = filter === 'all' || (filter === 'closed' ? st === 'closed' : st !== 'closed');
+      if (q) show = el.textContent.toLowerCase().includes(q);
+      show = show || keep.has(el.dataset.id) || (!q && pinned.has(el.dataset.id));
+      el.classList.toggle('hidden-by-filter', !show);
+      if (show && el.dataset.parent) keep.add(el.dataset.parent);
+    });
+    document.querySelectorAll('section.group').forEach(sec => {
+      sec.classList.toggle('hidden-by-filter', !sec.querySelector('details.item:not(.hidden-by-filter)'));
+    });
+  }
+
+  function markCurrent() {
+    const open = [...document.querySelectorAll('details.item[open]')].pop();
+    document.querySelectorAll('.rail a').forEach(a => a.classList.toggle('cur', !!open && a.dataset.jump === open.dataset.id));
+  }
+
+  // ---------- drafts & sending
+  function drafts() { return [...document.querySelectorAll('textarea[data-item]')].filter(t => t.value.trim()).map(t => t.dataset.item); }
+  function syncPill() {
+    const n = drafts().length;
+    $('pill').hidden = !n;
+    $('pilltext').textContent = n === 1 ? '1 draft' : (n < 5 ? `${n} drafts` : `${n} drafts`);
+  }
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('on');
+    clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('on'), 2600);
+  }
+  async function send(id) {
+    const ta = $('ans-' + id);
+    const text = ta?.value.trim();
+    if (!text) return false;
+    const res = await fetch('feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item: id, text, round: state.round }) });
+    if (!res.ok) { toast('Could not send (' + res.status + '). Draft saved.'); return false; }
+    const { at } = await res.json();
+    pending.push({ at, data: { item: id, text } });
+    ta.value = ''; store.set(id, '');
+    return true;
+  }
+  // The next item that still waits for an answer: after `fromId` in page order, else from the top.
+  function nextWaiting(fromId) {
+    const all = [...document.querySelectorAll('details.item:not(.hidden-by-filter)')];
+    const waiting = all.filter(d => d.dataset.status === 'needs-you' && d.dataset.id !== fromId && !pendingFor(d.dataset.id).length);
+    const from = all.findIndex(d => d.dataset.id === fromId);
+    return waiting.find(d => all.indexOf(d) > from) || waiting[0] || null;
+  }
+  function openAndFocus(el) {
+    let p = el; while (p) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    el.querySelector(':scope > .ibody textarea')?.focus({ preventScroll: true });
+    markCurrent();
+  }
+
+  async function sendMany(ids, advance = false) {
+    let ok = 0;
+    for (const id of ids) { if (await send(id)) ok++; }
+    if (!ok) return;
+    const sent = new Set(ids);
+    ids.forEach(id => pinned.delete(id));
+    const openIds = [...document.querySelectorAll('details.item[open]')].map(d => d.dataset.id)
+      .filter(id => !(advance && sent.has(id)));
+    render();
+    document.querySelectorAll('details.item[open]').forEach(d => { d.open = false; });
+    openIds.forEach(id => $('i-' + id)?.setAttribute('open', ''));
+    $('sentnote').hidden = false;
+    if (advance && ids.length === 1 && ids[0] !== '_general') {
+      const next = nextWaiting(ids[0]);
+      if (next) { openAndFocus(next); toast('Sent — next item ' + next.dataset.id); }
+      else toast('Sent. All items have answers');
+    } else {
+      toast(ok === 1 ? 'Sent' : `Sent: ${ok}`);
+    }
+  }
+
+  // ---------- loading
+  async function loadPending() {
+    try {
+      const res = await fetch('feedback', { cache: 'no-store' });
+      if (!res.ok) return [];
+      return (await res.text()).split('\n').filter(Boolean)
+        .map(l => { try { return JSON.parse(l); } catch { return null; } })
+        .filter(e => e && e.at > (state.processed_until || ''));
+    } catch { return []; }
+  }
+  async function load() {
+    state = await (await fetch('state.json', { cache: 'no-store' })).json();
+    pending = await loadPending();
+    // A first visit starts with everything seen: only answers arriving later pulse.
+    if (!store.get('init')) { everyItem(it => store.set(seenKey(it.id), String(aiCount(it)))); store.set('init', '1'); }
+    render();
+    if (location.hash) $(location.hash.slice(1))?.scrollIntoView({ block: 'start' });
+  }
+
+  // Live updates: re-render in place, keeping what is open, the scroll position and the caret.
+  async function poll() {
+    try {
+      const fresh = await (await fetch('state.json', { cache: 'no-store' })).json();
+      const changed = fresh.updated !== state.updated;
+      if (changed) state = fresh;
+      const nextPending = await loadPending();
+      if (!changed && nextPending.length === pending.length) return;
+      pending = nextPending;
+      softRender(changed);
+    } catch {}
+  }
+  function softRender(announce) {
+    const openIds = [...document.querySelectorAll('details.item[open]')].map(d => d.dataset.id);
+    const moreOpen = [...document.querySelectorAll('details.more[open]')].map(d => d.closest('details.item')?.dataset.id);
+    const y = window.scrollY;
+    const ae = document.activeElement;
+    const caretItem = ae?.dataset?.item, caret = caretItem ? [ae.selectionStart, ae.selectionEnd] : null;
+    const before = new Set(freshIds());
+    [...openIds, ...drafts(), caretItem].forEach(id => id && pinned.add(id));
+    render(true);
+    openIds.forEach(id => $('i-' + id)?.setAttribute('open', ''));
+    moreOpen.forEach(id => $('i-' + id)?.querySelector(':scope > .ibody details.more')?.setAttribute('open', ''));
+    // An item that is already open shows its new message right away: highlight it instead of pulsing.
+    openIds.forEach(id => { if (markSeen(id)) [...($('i-' + id)?.querySelectorAll(':scope > .ibody > .col-text > .thread > .msg.ai') || [])].pop()?.classList.add('flash'); });
+    window.scrollTo(0, y);
+    if (caretItem) { const t = $('ans-' + caretItem); if (t) { t.focus({ preventScroll: true }); try { t.setSelectionRange(...caret); } catch {} } }
+    markCurrent();
+    const arrived = freshIds().filter(id => !before.has(id));
+    if (announce && arrived.length) toast('AI replied: ' + arrived.join(', '));
+  }
+
+  // ---------- events
+  document.addEventListener('input', e => {
+    const t = e.target;
+    if (t.matches('textarea[data-item]')) { store.set(t.dataset.item, t.value); syncPill(); }
+    if (t.id === 'search') { query = t.value; applyFilter(); }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.matches('textarea[data-item]')) { e.preventDefault(); sendMany([e.target.dataset.item], true); }
+    if (e.key === 'Escape') $('rail').classList.remove('open');
+  });
+  document.addEventListener('toggle', e => { if (e.target.open) fitTables(); if (e.target.matches?.('details.item')) { if (e.target.open) markSeen(e.target.dataset.id); else pinned.delete(e.target.dataset.id); markCurrent(); } }, true);
+  document.addEventListener('click', e => {
+    const b = e.target.closest('button, a[data-jump]');
+    if (!b) { if (!e.target.closest('.rail, #navbtn')) $('rail').classList.remove('open'); return; }
+    if (b.dataset.send) sendMany([b.dataset.send], true);
+    else if (b.dataset.quick) {
+      const ta = $('ans-' + b.dataset.for);
+      ta.value = (ta.value.trim() ? ta.value.replace(/\s*$/, '\n') : '') + b.dataset.quick;
+      store.set(b.dataset.for, ta.value); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); syncPill();
+    } else if (b.dataset.older) {
+      fullThreads.add(b.dataset.older);
+      const item = byId.get(b.dataset.older), box = b.parentElement;
+      const messages = [...(item.thread || []).map(msgHTML), ...pendingFor(item.id).map(pendingHTML)];
+      box.innerHTML = messages.join('');
+    } else if (b.dataset.reopen) {
+      const col = b.closest('.col-answer');
+      const it = { id: b.dataset.reopen, status: 'needs-you' };
+      col.innerHTML = answerHTML(it);
+      col.querySelector('textarea').focus();
+    } else if (b.dataset.filter) {
+      filter = b.dataset.filter;
+      document.querySelectorAll('[data-filter]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      applyFilter();
+    } else if (b.dataset.jump) {
+      const el = $('i-' + b.dataset.jump);
+      let p = el; while (p) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+      el.classList.remove('hidden-by-filter');
+      $('rail').classList.remove('open');
+      markCurrent();
+    } else if (b.id === 'sendAll') sendMany(drafts());
+    else if (b.id === 'toGeneral') { $('general').scrollIntoView({ behavior: 'smooth' }); $('ans-_general').focus({ preventScroll: true }); }
+    else if (b.id === 'navbtn') $('rail').classList.toggle('open');
+    else if (b.id === 'theme') applyTheme(THEMES[(THEMES.indexOf(currentTheme()) + 1) % THEMES.length]);
+    else if (b.id === 'expand') {
+      const all = [...document.querySelectorAll('details.item:not(.hidden-by-filter)')];
+      const openAll = all.some(d => !d.open);
+      all.forEach(d => { d.open = openAll; });
+      b.textContent = openAll ? 'Collapse all' : 'Expand all';
+      markCurrent();
+    }
+  });
+
+  $('theme').textContent = THEME_LABEL[currentTheme()];
+  syncHighlightTheme();
+  $('ans-_general').value = store.get('_general');
+  load().catch(err => { $('title').textContent = 'Could not load state.json'; console.error(err); });
+  setInterval(poll, 6000);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{.Title}}</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fafafa; --fg: #1a1a1a; --muted: #636b74; --line: #dfe3e8;
+    --surface: #f0f2f4; --accent: #2457c5;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101215; --fg: #e8e8e8; --muted: #a5abb3; --line: #30353b;
+      --surface: #1b2026; --accent: #8aadff;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.65 var(--sans); }
+  main { width: min(100% - 32px, 820px); margin: 0 auto; padding: 48px 0 80px; overflow-wrap: break-word; }
+  h1, h2, h3, h4, h5, h6 { line-height: 1.25; margin: 1.7em 0 .55em; scroll-margin-top: 20px; }
+  h1:first-child { margin-top: 0; }
+  h1 { font-size: 2.1em; } h2 { font-size: 1.55em; border-bottom: 1px solid var(--line); padding-bottom: .25em; }
+  h3 { font-size: 1.25em; } h4, h5, h6 { font-size: 1em; }
+  p, ul, ol, blockquote, pre, table { margin: 0 0 1.2em; }
+  ul, ol { padding-left: 1.7em; } li > ul, li > ol { margin: .25em 0; }
+  a { color: var(--accent); text-underline-offset: .15em; }
+  img, video { max-width: 100%; height: auto; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 2em 0; }
+  blockquote { border-left: 3px solid var(--line); color: var(--muted); padding: .1em 0 .1em 1em; margin-left: 0; }
+  blockquote > :last-child { margin-bottom: 0; }
+  code, pre { font-family: var(--mono); font-size: .9em; }
+  code { background: var(--surface); border-radius: 4px; padding: .15em .35em; }
+  pre { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; overflow-x: auto; line-height: 1.5; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  table { border-collapse: collapse; display: block; max-width: 100%; overflow-x: auto; }
+  th, td { border: 1px solid var(--line); padding: 7px 12px; text-align: left; }
+  th { background: var(--surface); }
+  input[type="checkbox"] { margin-right: .4em; accent-color: var(--accent); }
+  .footnotes { border-top: 1px solid var(--line); margin-top: 3em; padding-top: 1em; font-size: .9em; }
+</style>
+</head>
+<body>
+<main>{{.Content}}</main>
+</body>
+</html>

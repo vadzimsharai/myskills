@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{if .IsArchive}}Archive{{else}}Shares{{end}}</title>
+<style nonce="{{.Nonce}}">
+  :root {
+    --bg: #fafafa; --fg: #1a1a1a; --muted: #6b6b6b; --line: #e6e6e6;
+    --row: #ffffff; --row-hover: #f1f3f6; --accent: #2457c5; --chip: #eef2fb; --danger-bg: #fff0ef; --shadow: 0 12px 40px rgba(0,0,0,.18);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101215; --fg: #e8e8e8; --muted: #9a9fa6; --line: #262a30;
+      --row: #16191d; --row-hover: #1e2228; --accent: #7aa2ff; --chip: #1b2333; --danger-bg: #352023; --shadow: 0 12px 40px rgba(0,0,0,.6);
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--sans); }
+  main { max-width: 960px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 28px; }
+  h1 { font-size: 22px; margin: 0; font-weight: 600; letter-spacing: -.01em; }
+  .count { color: var(--muted); font-size: 14px; }
+  header form { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  button, .btn { font: 13px var(--sans); color: var(--accent); background: var(--chip); border: 1px solid transparent;
+           border-radius: 6px; padding: 4px 10px; cursor: pointer; text-decoration: none; white-space: nowrap; }
+  button:hover, .btn:hover { border-color: var(--accent); }
+  button:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  section { margin-bottom: 28px; }
+  h2 { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 8px 4px; }
+  ul { list-style: none; margin: 0; padding: 0; background: var(--row); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line); }
+  li:first-child { border-top: 0; }
+  li:hover { background: var(--row-hover); }
+  li > svg { width: 18px; height: 18px; color: var(--muted); }
+  li.site > svg { color: var(--accent); }
+  .title { font-weight: 500; color: var(--fg); text-decoration: none; }
+  .title:hover { color: var(--accent); }
+  .desc { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+  .meta { margin-top: 4px; font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+  .actions form { display: contents; }
+  .actions .icon-button { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--muted); }
+  .actions .icon-button:hover { background: var(--chip); border-color: var(--line); color: var(--fg); }
+  .actions .icon-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .actions .icon-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .actions .icon-button.copied { background: var(--chip); color: var(--accent); }
+  .actions .icon-button.danger:hover { background: var(--danger-bg); border-color: transparent; color: #c0392b; }
+  .empty { padding: 48px 16px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 10px; }
+  .panel { display: grid; gap: 8px; background: var(--row); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-bottom: 28px; }
+  .panel input, .panel textarea { font: 14px var(--sans); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; }
+  .panel textarea { min-height: 60px; resize: vertical; }
+  .panel .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .panel .row .grow { flex: 1; }
+  .panel .files { font-size: 13px; color: var(--muted); }
+  .primary { color: #fff; background: var(--accent); }
+  button.danger { color: #c0392b; }
+  li form.edit, li .tokens { grid-column: 2 / -1; margin-top: 10px; }
+  li .panel { margin-bottom: 0; padding: 10px; }
+  li.private > svg { color: #b7791f; }
+  .badge { font: 11px var(--sans); padding: 0 6px; border-radius: 999px; background: var(--chip); color: var(--accent); }
+  .badge.lock { background: color-mix(in srgb, #b7791f 16%, transparent); color: #b7791f; }
+  .check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
+  .check input { margin-top: 4px; }
+  .check small { display: block; color: var(--muted); font-size: 12px; }
+  .panel select { font: 14px var(--sans); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+  .panel input.ttl { width: 80px; }
+  .token-list { display: grid; gap: 6px; }
+  .token { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+  .token .label { font-weight: 500; }
+  .token .meta { margin: 0; flex: 1; }
+  .token form { margin-left: auto; }
+  .token.expired, .token.used { opacity: .6; }
+  .state { font: 11px var(--sans); padding: 0 6px; border-radius: 999px; }
+  .state.active { background: color-mix(in srgb, #2f9e44 18%, transparent); color: #2f9e44; }
+  .state.expired, .state.used { background: var(--chip); color: var(--muted); }
+  .hint { color: var(--muted); font-size: 12px; margin: 0; }
+  .hint code, .secret code { font-family: var(--mono); font-size: 12px; }
+  .secret { border-color: var(--accent); }
+  .secret h3 { margin: 0; font-size: 15px; }
+  .secret .line { display: flex; gap: 8px; align-items: center; }
+  .secret .line code { flex: 1; min-width: 0; overflow-wrap: anywhere; padding: 6px 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+  .secret .label { width: 84px; flex: none; color: var(--muted); font-size: 13px; }
+  .secret pre { margin: 0; padding: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; font: 12px var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+  body.drop::after { content: "Drop files to create a share"; position: fixed; inset: 12px; display: grid; place-items: center; font-size: 20px; color: var(--accent);
+                     border: 2px dashed var(--accent); border-radius: 12px; background: color-mix(in srgb, var(--bg) 85%, transparent); pointer-events: none; }
+  #preview { position: fixed; z-index: 10; width: 520px; height: 340px; overflow: hidden; border-radius: 10px; border: 1px solid var(--line);
+             background: var(--row); box-shadow: var(--shadow); pointer-events: none; opacity: 0; transition: opacity .12s; }
+  #preview.on { opacity: 1; }
+  #preview iframe { width: 1040px; height: 680px; border: 0; transform: scale(.5); transform-origin: 0 0; background: #fff; }
+  @media (hover: none), (max-width: 720px) { #preview { display: none; } }
+  @media (max-width: 600px) { li { grid-template-columns: 24px minmax(0, 1fr); } .actions { grid-column: 2; justify-content: flex-start; margin-top: 8px; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" aria-hidden="true" style="position:absolute;overflow:hidden">
+  <symbol id="icon-copy" viewBox="0 0 20 20"><rect x="7" y="7" width="10" height="11" rx="2"/><path d="M5 14H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="icon-files" viewBox="0 0 20 20"><rect x="2.5" y="3" width="15" height="14" rx="2"/><path d="M6 7h8M6 10h8M6 13h5"/></symbol>
+  <symbol id="icon-open" viewBox="0 0 20 20"><path d="M10 3H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5M11 3h6v6M17 3l-8 8"/></symbol>
+  <symbol id="icon-edit" viewBox="0 0 20 20"><path d="M12.5 4.5l3 3M3 17l3.7-.8L16 6.9a2.1 2.1 0 0 0-3-3L3.8 13.2 3 17z"/></symbol>
+  <symbol id="icon-archive" viewBox="0 0 20 20"><rect x="2.5" y="3" width="15" height="4" rx="1"/><path d="M4 7v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7M10 9v5m-2-2 2 2 2-2"/></symbol>
+  <symbol id="icon-restore" viewBox="0 0 20 20"><rect x="2.5" y="3" width="15" height="4" rx="1"/><path d="M4 7v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7M10 14V9m-2 2 2-2 2 2"/></symbol>
+  <symbol id="icon-trash" viewBox="0 0 20 20"><path d="M3.5 5.5h13M7 5.5v-2h6v2M5 5.5l.7 11.1a1 1 0 0 0 1 .9h6.6a1 1 0 0 0 1-.9L15 5.5M8 9v5M12 9v5"/></symbol>
+  <symbol id="icon-check" viewBox="0 0 20 20"><path d="M4 10.5l4 4L16 6"/></symbol>
+  <symbol id="icon-key" viewBox="0 0 20 20"><circle cx="6.5" cy="13.5" r="3.5"/><path d="M9 11l7.5-7.5M14 6l2 2M12 8l1.5 1.5"/></symbol>
+</svg>
+<main>
+  <header>
+    <h1>{{if .IsArchive}}Archive{{else}}Shares{{end}}</h1>
+    <span class="count">{{.Total}}</span>
+    <form method="post" action="/logout"><a class="btn" href="{{if .IsArchive}}/{{else}}/archive{{end}}">{{if .IsArchive}}Active shares{{else}}Archive{{end}}</a> {{if not .IsArchive}}<button type="button" id="newShare" class="primary">New share</button> {{end}}<button type="submit">Sign out</button></form>
+  </header>
+
+{{with .NewToken}}
+  <section class="panel secret" id="newToken">
+    <h3>Upload token for “{{.ShareTitle}}”</h3>
+    <p class="hint">Shown only once — copy it now. {{if eq .Kind "forever"}}Never expires.{{else if eq .Kind "once"}}Works for one upload, until {{.Expires}}.{{else}}Valid until {{.Expires}}.{{end}}</p>
+    <div class="line"><span class="label">Upload URL</span><code>{{.UploadURL}}</code><button type="button" class="copytext" data-text="{{.UploadURL}}">Copy</button></div>
+    <div class="line"><span class="label">Token</span><code>{{.Token}}</code><button type="button" class="copytext" data-text="{{.Token}}">Copy</button></div>
+    <pre>curl -fsS -T shot.png {{.UploadURL}}/
+curl -fsS -F files=@a.pdf -F files=@b.png '{{.UploadURL}}?plain'</pre>
+  </section>
+{{end}}
+{{if not .IsArchive}}
+  <form id="createForm" class="panel" method="post" action="/?action=create" enctype="multipart/form-data" hidden>
+    <input name="title" placeholder="Title" maxlength="200" required autocomplete="off">
+    <textarea name="description" placeholder="One line about what this is and for whom" maxlength="1000"></textarea>
+    <label class="check"><input type="checkbox" name="private"><span>Private files<small>No listing for anyone but you; every file gets a random name and opens only by its own link.</small></span></label>
+    <div class="row">
+      <label class="btn">Add files<input id="createFiles" type="file" name="files" multiple hidden></label>
+      <span class="files grow" id="createFilesLabel">no files yet — you can add them later</span>
+      <button type="submit" class="primary">Create</button>
+      <button type="button" id="createCancel">Cancel</button>
+    </div>
+  </form>
+{{end}}
+
+  {{range .Groups}}
+  <section>
+    <h2>{{.Label}}</h2>
+    <ul>
+    {{range .Shares}}
+      <li class="share {{if .Private}}private{{else if .IsSite}}site{{else}}folder{{end}}"{{if not .Private}} data-url="{{.URL}}"{{end}}>
+        {{if .Private}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="10" height="7.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>
+        {{else if .IsSite}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M1.5 5.5h13M4 4h.01M6 4h.01"/></svg>
+        {{else}}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 4.5v8a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H8L6.5 3.5h-4a1 1 0 0 0-1 1z"/></svg>{{end}}
+        <div>
+          <a class="title" href="{{.URL}}" target="_blank" rel="noopener">{{.Title}}</a>
+          {{if .Description}}<p class="desc">{{.Description}}</p>{{end}}
+          <div class="meta"><span>{{.CreatedLabel}}</span>{{if .Private}}<span class="badge lock">private</span>{{else}}<span>{{if .IsSite}}site{{else}}folder{{end}}</span>{{end}}{{if .LiveTokens}}<span class="badge">{{.LiveTokens}} upload {{if eq .LiveTokens 1}}token{{else}}tokens{{end}}</span>{{end}}<span>{{.Files}} {{if eq .Files 1}}file{{else}}files{{end}} · {{.Size}}</span><span title="{{.Key}}">{{.ShortKey}}</span></div>
+        </div>
+        <div class="actions">
+{{if $.IsArchive}}
+          <a class="icon-button" href="{{.URL}}?files" target="_blank" rel="noopener" aria-label="Files" title="Files"><svg aria-hidden="true"><use href="#icon-files"/></svg></a>
+          <a class="icon-button" href="{{.URL}}" target="_blank" rel="noopener" aria-label="Open" title="Open"><svg aria-hidden="true"><use href="#icon-open"/></svg></a>
+          <form method="post" action="/?action=restore"><input type="hidden" name="key" value="{{.Key}}"><button class="icon-button" type="submit" aria-label="Restore" title="Restore"><svg aria-hidden="true"><use href="#icon-restore"/></svg></button></form>
+{{else}}
+          {{if not .Private}}<button class="icon-button copy" type="button" data-url="{{.URL}}" aria-label="Copy link" title="Copy link"><svg aria-hidden="true"><use href="#icon-copy"/></svg></button>{{end}}
+          <a class="icon-button" href="{{.URL}}?files" target="_blank" rel="noopener" aria-label="Files" title="Files"><svg aria-hidden="true"><use href="#icon-files"/></svg></a>
+          <a class="icon-button" href="{{.URL}}" target="_blank" rel="noopener" aria-label="Open" title="Open"><svg aria-hidden="true"><use href="#icon-open"/></svg></a>
+          <button class="icon-button editmeta" type="button" aria-label="Edit" title="Edit"><svg aria-hidden="true"><use href="#icon-edit"/></svg></button>
+          <button class="icon-button tokensbtn" type="button" aria-label="Upload tokens" title="Upload tokens"><svg aria-hidden="true"><use href="#icon-key"/></svg></button>
+          <form method="post" action="/?action=archive"><input type="hidden" name="key" value="{{.Key}}"><button class="icon-button" type="submit" aria-label="Archive" title="Archive"><svg aria-hidden="true"><use href="#icon-archive"/></svg></button></form>
+          <form method="post" action="/?action=delete" class="del" data-title="{{.Title}}"><input type="hidden" name="key" value="{{.Key}}"><button class="icon-button danger" type="submit" aria-label="Delete" title="Delete"><svg aria-hidden="true"><use href="#icon-trash"/></svg></button></form>
+{{end}}
+        </div>
+{{if not $.IsArchive}}
+        <form method="post" action="/?action=edit" class="edit panel" hidden>
+          <input type="hidden" name="key" value="{{.Key}}">
+          <input name="title" value="{{.Title}}" maxlength="200" required autocomplete="off">
+          <textarea name="description" placeholder="Description" maxlength="1000">{{.Description}}</textarea>
+          <input type="hidden" name="privacy" value="1">
+          <label class="check"><input type="checkbox" name="private"{{if .Private}} checked{{end}}><span>Private files<small>No listing for anyone but you; only random-named files open, each by its own link. Existing files with ordinary names stop opening.</small></span></label>
+          <div class="row"><button type="submit" class="primary">Save</button><button type="button" class="editcancel">Cancel</button></div>
+        </form>
+        <div class="tokens panel" hidden>
+          <div class="token-list">
+          {{$key := .Key}}{{range .Tokens}}
+            <div class="token {{.Status}}">
+              <span class="label">{{if .Label}}{{.Label}}{{else}}untitled{{end}}</span>
+              <span class="state {{.Status}}">{{.Status}}</span>
+              <span class="meta"><span>{{if eq .Kind "forever"}}forever{{else if eq .Kind "once"}}one-time · until {{.Expires}}{{else}}until {{.Expires}}{{end}}</span><span>created {{.Created}}</span>{{if .LastUsed}}<span>last used {{.LastUsed}}</span>{{end}}<span>#{{.ID}}</span></span>
+              <form method="post" action="/?action=token-revoke" class="revoke"><input type="hidden" name="key" value="{{$key}}"><input type="hidden" name="id" value="{{.ID}}"><button type="submit" class="danger">Revoke</button></form>
+            </div>
+          {{else}}
+            <p class="hint">No upload tokens yet.</p>
+          {{end}}
+          </div>
+          <form method="post" action="/?action=token-create" class="row">
+            <input type="hidden" name="key" value="{{.Key}}">
+            <input class="grow" name="label" placeholder="Label, e.g. laptop screenshots" maxlength="100" autocomplete="off">
+            <select name="kind"><option value="forever">Forever</option><option value="ttl">Expires in</option><option value="once">One-time</option></select>
+            <input class="ttl" name="ttl" placeholder="7d" value="7d" pattern="[0-9]{1,6}[mhd]" title="30m, 12h, 7d" hidden>
+            <button type="submit" class="primary">Create token</button>
+          </form>
+          <p class="hint">Endpoint: <code>POST|PUT {{.URL}}upload/&lt;token&gt;/</code> — raw body or multipart <code>files</code>; the reply lists each file's link.</p>
+        </div>
+{{end}}
+      </li>
+    {{end}}
+    </ul>
+  </section>
+  {{else}}
+  <p class="empty">{{if .IsArchive}}Archive is empty.{{else}}No shares yet — <code>share new --title "…" &lt;dir&gt;</code>{{end}}</p>
+  {{end}}
+</main>
+
+{{if not .IsArchive}}
+<div id="preview" hidden><iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="preview"></iframe></div>
+
+<script nonce="{{.Nonce}}">
+(function () {
+  var pop = document.getElementById('preview');
+  var frame = pop.querySelector('iframe');
+  var timer = null, shown = null;
+  var W = 520, H = 340, GAP = 16;
+
+  function place(e) {
+    var x = e.clientX + GAP, y = e.clientY + GAP;
+    if (x + W > window.innerWidth - 8) x = e.clientX - W - GAP;
+    if (y + H > window.innerHeight - 8) y = window.innerHeight - H - 8;
+    if (x < 8) x = 8;
+    if (y < 8) y = 8;
+    pop.style.left = x + 'px';
+    pop.style.top = y + 'px';
+  }
+  function show(url, e) {
+    if (shown !== url) { frame.src = url; shown = url; }
+    pop.hidden = false;
+    place(e);
+    pop.classList.add('on');
+  }
+  function hide() {
+    clearTimeout(timer);
+    timer = null;
+    pop.classList.remove('on');
+    pop.hidden = true;
+    frame.src = 'about:blank';
+    shown = null;
+  }
+  document.querySelectorAll('li.share[data-url]').forEach(function (row) {
+    row.addEventListener('mouseenter', function (e) {
+      clearTimeout(timer);
+      timer = setTimeout(function () { show(row.dataset.url, e); }, 250);
+    });
+    row.addEventListener('mousemove', function (e) { if (!pop.hidden) place(e); });
+    row.addEventListener('mouseleave', hide);
+  });
+
+  var createForm = document.getElementById('createForm'), createFiles = document.getElementById('createFiles');
+  function openCreate() { createForm.hidden = false; createForm.querySelector('[name=title]').focus(); }
+  function showFiles() {
+    var n = createFiles.files.length;
+    document.getElementById('createFilesLabel').textContent = n ? n + ' file' + (n === 1 ? '' : 's') + ' selected' : 'no files yet — you can add them later';
+  }
+  document.getElementById('newShare').addEventListener('click', openCreate);
+  document.getElementById('createCancel').addEventListener('click', function () { createForm.hidden = true; });
+  createFiles.addEventListener('change', showFiles);
+  document.querySelectorAll('form.del').forEach(function (f) {
+    f.addEventListener('submit', function (e) {
+      if (!confirm('Delete share "' + f.dataset.title + '" and all its files?')) e.preventDefault();
+    });
+  });
+  document.querySelectorAll('button.editmeta').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var f = b.closest('li').querySelector('form.edit');
+      f.hidden = !f.hidden;
+      if (!f.hidden) f.querySelector('[name=title]').focus();
+    });
+  });
+  document.querySelectorAll('button.editcancel').forEach(function (b) {
+    b.addEventListener('click', function () { b.closest('form').hidden = true; });
+  });
+  document.querySelectorAll('button.tokensbtn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var p = b.closest('li').querySelector('.tokens');
+      p.hidden = !p.hidden;
+    });
+  });
+  document.querySelectorAll('.tokens select[name=kind]').forEach(function (sel) {
+    sel.addEventListener('change', function () {
+      var ttl = sel.form.querySelector('[name=ttl]');
+      ttl.hidden = sel.value === 'forever';
+      ttl.placeholder = sel.value === 'once' ? '24h' : '7d';
+      ttl.value = sel.value === 'once' ? '24h' : '7d';
+    });
+  });
+  document.querySelectorAll('form.revoke').forEach(function (f) {
+    f.addEventListener('submit', function (e) {
+      if (!confirm('Revoke this upload token? Devices using it stop uploading.')) e.preventDefault();
+    });
+  });
+  document.querySelectorAll('button.copytext').forEach(function (b) {
+    b.addEventListener('click', function () {
+      navigator.clipboard.writeText(b.dataset.text).then(function () {
+        b.textContent = 'Copied';
+        setTimeout(function () { b.textContent = 'Copy'; }, 1500);
+      });
+    });
+  });
+  // The token page is a POST response; drop it from history so reload cannot resubmit.
+  if (document.getElementById('newToken')) history.replaceState(null, '', '/');
+  var depth = 0;
+  document.addEventListener('dragenter', function (e) { if (e.dataTransfer && e.dataTransfer.types.indexOf('Files') >= 0) { depth++; document.body.classList.add('drop'); } });
+  document.addEventListener('dragleave', function () { if (--depth <= 0) { depth = 0; document.body.classList.remove('drop'); } });
+  document.addEventListener('dragover', function (e) { e.preventDefault(); });
+  document.addEventListener('drop', function (e) {
+    e.preventDefault(); depth = 0; document.body.classList.remove('drop');
+    if (e.dataTransfer.files.length) { createFiles.files = e.dataTransfer.files; showFiles(); openCreate(); }
+  });
+
+  document.querySelectorAll('button.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      navigator.clipboard.writeText(location.origin + btn.dataset.url).then(function () {
+        btn.classList.add('copied');
+        btn.setAttribute('aria-label', 'Copied');
+        btn.title = 'Copied';
+        btn.querySelector('use').setAttribute('href', '#icon-check');
+        setTimeout(function () {
+          btn.classList.remove('copied');
+          btn.setAttribute('aria-label', 'Copy link');
+          btn.title = 'Copy link';
+          btn.querySelector('use').setAttribute('href', '#icon-copy');
+        }, 1500);
+      });
+    });
+  });
+})();
+</script>
+{{end}}
+</body>
+</html>

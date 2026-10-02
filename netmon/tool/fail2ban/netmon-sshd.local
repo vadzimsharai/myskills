@@ -1,0 +1,75 @@
+# Managed by netmon (fail2ban/install.sh). Scanners here try ~0.1-0.4 logins/min per IP,
+# below the stock 5-per-10min threshold, hence the 1h window.
+[DEFAULT]
+ignoreip = 127.0.0.1/8 ::1 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 @HOST_IP@
+ignorecommand = /usr/local/bin/netmon-ignoreip <ip>
+bantime = 1h
+bantime.increment = true
+bantime.factor = 2
+bantime.maxtime = 4w
+# Permanent jails (bantime = -1) turn increment off, otherwise maxtime would cap them.
+
+[sshd]
+enabled = true
+backend = systemd
+mode = aggressive
+maxretry = 5
+findtime = 1h
+
+# Slow scanners stay under 5/h for days; catch them over a day.
+[sshd-slow]
+enabled = true
+backend = systemd
+filter = sshd[mode=aggressive]
+port = ssh
+maxretry = 20
+findtime = 1d
+bantime = -1
+bantime.increment = false
+
+[sshd-scanner]
+enabled = true
+backend = systemd
+filter = sshd-scanner
+banaction = %(banaction_allports)s
+maxretry = 3
+findtime = 1d
+bantime = -1
+bantime.increment = false
+
+[netmon-sshd-protected]
+enabled = true
+backend = systemd
+filter = netmon-sshd-protected
+port = ssh
+maxretry = 2
+findtime = 1d
+bantime = 1w
+
+[netmon-ban]
+enabled = true
+backend = polling
+filter = netmon-ban
+logpath = @NETMON_DIR@/data/netmon-ban.log
+banaction = %(banaction_allports)s
+maxretry = 1
+findtime = 1d
+bantime = 4w
+
+[netmon-ban-permanent]
+enabled = true
+backend = polling
+filter = netmon-ban-permanent
+logpath = @NETMON_DIR@/data/netmon-ban.log
+banaction = %(banaction_allports)s
+maxretry = 1
+findtime = 1d
+bantime = -1
+bantime.increment = false
+
+[recidive]
+enabled = true
+findtime = 1d
+maxretry = 3
+bantime = -1
+bantime.increment = false

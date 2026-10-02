@@ -1,0 +1,391 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SHARE_ROOT="${SHARE_ROOT:-$HOME/.local/share/agent-share}"
+SHARE_BASE_URL="${SHARE_BASE_URL:-http://127.0.0.1:8080}"
+SHARE_SERVER_DIR="${SHARE_SERVER_DIR:-$SCRIPT_DIR/../server}"
+SHARE_ENV="${SHARE_ENV:-$SHARE_SERVER_DIR/.env}"
+SHARE_CONTAINER="${SHARE_CONTAINER:-agent-share}"
+META=".share.json"
+KEY_BYTES=24
+DEFAULT_TTL="24h"
+export SHARE_ROOT
+
+usage() {
+  cat <<USAGE
+Usage:
+  share new [--title "Title"] [--desc "…"] [--private] [<dir> | <file>...]   create a share, print its URL
+  share add <key> <dir> | <file>...                  copy more content into a share
+  share edit <key> [--title "Title"] [--desc "…"] [--private|--public]   update title/description/privacy
+  share ls                                           list shares
+  share token <key> [--label "…"] [--ttl 7d] [--once]  new upload token (forever unless --ttl/--once), prints the upload URL
+  share tokens <key>                                 list upload tokens (id, label, kind, status)
+  share revoke <key> <token-id>                      delete an upload token
+  share feedback on|off|show|path <key>              let the page POST answers to /<key>/feedback (one JSON line each)
+  share url <key>                                    print the URL of a share
+  share path <key>                                   print the folder of a share
+  share link <key> [<path>] [--ttl 24h]              signed, expiring link to a file/subfolder
+  share rotate <key>                                 rename the folder = new key, old links die
+  share rm <key>                                     delete a share
+
+  share up [--build]                                 start the server container if it is not running
+  share down                                         stop the server container
+  share status                                       container state + share count
+  share creds                                        dashboard URL, login and password (from .env)
+
+Content rules: a single directory argument is copied as the share root (so its
+index.html or index.md becomes the page); otherwise each argument is copied into
+the root as-is. Dotfiles are never served. Without an index page the folder is listed.
+
+Private shares (--private) have no listing or index for anyone but the dashboard
+owner; files uploaded to them get random names and open only by their own URL.
+Upload tokens: POST or PUT $SHARE_BASE_URL/<key>/upload/<token>[/<name>]
+(raw body or multipart "files"); the reply is JSON with each file's URL (?plain: text).
+
+TTL units: m (minutes), h (hours), d (days). Default $DEFAULT_TTL.
+Env: SHARE_ROOT, SHARE_BASE_URL, SHARE_SERVER_DIR, SHARE_ENV, SHARE_SECRET
+USAGE
+}
+
+die() { echo "share: $*" >&2; exit 1; }
+b64url() { base64 | tr '+/' '-_' | tr -d '=\n'; }
+
+require_key() {
+  [[ "${1:-}" =~ ^[A-Za-z0-9_-]{20,128}$ ]] || die "not a share key: '${1:-}' (20+ url-safe chars)"
+  [[ -d "$SHARE_ROOT/$1" ]] || die "no such share: $1"
+}
+
+new_key() { openssl rand "$KEY_BYTES" | b64url; }
+
+json_escape() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'; }
+json_unescape() { printf '%s' "$1" | sed -e 's/\\"/"/g' -e 's/\\\\/\\/g'; }
+meta_field() { [[ -f "$SHARE_ROOT/$1/$META" ]] && sed -n "s/^[[:space:]]*\"$2\":[[:space:]]*\"\(.*\)\",\{0,1\}\$/\1/p" "$SHARE_ROOT/$1/$META" | head -n1 || true; }
+
+share_url() { printf '%s/%s/\n' "$SHARE_BASE_URL" "$1"; }
+
+env_field() {
+  [[ -f "$SHARE_ENV" ]] || die "$SHARE_ENV not found"
+  sed -n "s/^$1=//p" "$SHARE_ENV" | head -n1
+}
+
+secret() {
+  if [[ -n "${SHARE_SECRET:-}" ]]; then printf '%s' "$SHARE_SECRET"; return; fi
+  local v; v="$(env_field SHARE_SECRET)"
+  [[ -n "$v" ]] || die "SHARE_SECRET missing in $SHARE_ENV"
+  printf '%s' "$v"
+}
+
+meta_private() { [[ -f "$SHARE_ROOT/$1/$META" ]] && grep -q '"private":[[:space:]]*true' "$SHARE_ROOT/$1/$META"; }
+
+write_meta() {
+  local key="$1" title="$2" desc="$3" created="$4" private="${5:-false}"
+  printf '{\n  "title": "%s",\n  "description": "%s",\n  "created": "%s",\n  "private": %s\n}\n' \
+    "$(json_escape "$title")" "$(json_escape "$desc")" "$created" "$private" > "$SHARE_ROOT/$key/$META"
+}
+
+docker_cmd() {
+  if docker info >/dev/null 2>&1; then echo docker; else echo "sudo docker"; fi
+}
+
+container_running() {
+  [[ "$($1 inspect -f '{{.State.Running}}' "$2" 2>/dev/null)" == "true" ]]
+}
+
+ttl_seconds() {
+  [[ "$1" =~ ^([0-9]+)([mhd])$ ]] || die "bad ttl '$1' (e.g. 30m, 12h, 7d)"
+  local n="${BASH_REMATCH[1]}"
+  case "${BASH_REMATCH[2]}" in m) echo $((n*60));; h) echo $((n*3600));; d) echo $((n*86400));; esac
+}
+
+copy_into() {
+  local dest="$1"; shift
+  if (( $# == 1 )) && [[ -d "$1" ]]; then
+    cp -r "$1"/. "$dest"/
+  else
+    for src in "$@"; do
+      [[ -e "$src" ]] || die "no such file: $src"
+      cp -r "$src" "$dest"/
+    done
+  fi
+}
+
+cmd_new() {
+  local title="" desc="" private=false
+  while (( $# )); do
+    case "$1" in
+      --private|-p) private=true; shift ;;
+      --title|-t) title="${2:-}"; shift 2 ;;
+      --title=*) title="${1#--title=}"; shift ;;
+      --desc|-d) desc="${2:-}"; shift 2 ;;
+      --desc=*) desc="${1#--desc=}"; shift ;;
+      -h|--help) usage; exit 0 ;;
+      --) shift; break ;;
+      -*) die "unknown option: $1" ;;
+      *) break ;;
+    esac
+  done
+  command -v openssl >/dev/null || die "openssl is required"
+  local key dir
+  key="$(new_key)"
+  dir="$SHARE_ROOT/$key"
+  mkdir -p "$dir"
+  write_meta "$key" "$title" "$desc" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$private"
+  (( $# )) && copy_into "$dir" "$@"
+  share_url "$key"
+}
+
+cmd_edit() {
+  require_key "${1:-}"; local key="$1"; shift
+  local title desc
+  title="$(json_unescape "$(meta_field "$key" title)")"; desc="$(json_unescape "$(meta_field "$key" description)")"
+  local private=false
+  meta_private "$key" && private=true
+  (( $# )) || die "nothing to change (use --title / --desc / --private / --public)"
+  while (( $# )); do
+    case "$1" in
+      --private) private=true; shift ;;
+      --public) private=false; shift ;;
+      --title|-t) title="${2:-}"; shift 2 ;;
+      --title=*) title="${1#--title=}"; shift ;;
+      --desc|-d) desc="${2:-}"; shift 2 ;;
+      --desc=*) desc="${1#--desc=}"; shift ;;
+      *) die "unknown option: $1" ;;
+    esac
+  done
+  local created; created="$(meta_field "$key" created)"
+  write_meta "$key" "$title" "$desc" "${created:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}" "$private"
+  share_url "$key"
+}
+
+FEEDBACK_LOG=".feedback.jsonl"
+
+# Pages in a share POST answers to /<key>/feedback; the server appends them to this
+# dotfile only while it exists, so creating it is the opt-in and removing it the opt-out.
+cmd_feedback() {
+  local action="${1:-}"; shift || true
+  require_key "${1:-}"; local key="$1" log="$SHARE_ROOT/$1/$FEEDBACK_LOG"
+  case "$action" in
+    on)   [[ -f "$log" ]] || : > "$log"; printf '%s/%s/feedback\n' "$SHARE_BASE_URL" "$key" ;;
+    off)  [[ -f "$log" ]] && mv "$log" "$log.$(date -u +%Y%m%dT%H%M%SZ)"; echo "feedback off" ;;
+    show) [[ -f "$log" ]] || die "feedback is off for $key"; cat "$log" ;;
+    path) printf '%s\n' "$log" ;;
+    *) die "usage: share feedback on|off|show|path <key>" ;;
+  esac
+}
+
+cmd_add() {
+  require_key "${1:-}"; local key="$1"; shift
+  (( $# )) || die "nothing to add"
+  copy_into "$SHARE_ROOT/$key" "$@"
+  share_url "$key"
+}
+
+cmd_ls() {
+  [[ -d "$SHARE_ROOT" ]] || exit 0
+  local d key
+  for d in "$SHARE_ROOT"/*/; do
+    [[ -d "$d" ]] || continue
+    key="$(basename "$d")"
+    [[ "$key" =~ ^[A-Za-z0-9_-]{20,128}$ ]] || { echo "skipping '$key': name too short to be a key" >&2; continue; }
+    local mark=""
+    meta_private "$key" && mark="[private] "
+    printf '%-20s  %-30.30s  %s\n' "$(meta_field "$key" created)" "$mark$(json_unescape "$(meta_field "$key" title)")" "$(share_url "$key")"
+  done | sort
+}
+
+cmd_rotate() {
+  require_key "${1:-}"
+  local new; new="$(new_key)"
+  mv "$SHARE_ROOT/$1" "$SHARE_ROOT/$new"
+  share_url "$new"
+}
+
+# Token = base64url("v1|sha256(key)[:16]|<prefix>|<exp>") "." base64url(HMAC-SHA256(secret, that))
+# prefix: "" = whole share, "a/b/" = subfolder, "a/b.pdf" = single file (token-only URL).
+cmd_link() {
+  local key="" rel="" ttl="$DEFAULT_TTL"
+  while (( $# )); do
+    case "$1" in
+      --ttl) ttl="${2:-}"; shift 2 ;;
+      --ttl=*) ttl="${1#--ttl=}"; shift ;;
+      -h|--help) usage; exit 0 ;;
+      -*) [[ -z "$key" && "$1" =~ ^[A-Za-z0-9_-]{20,128}$ ]] || die "unknown option: $1"; key="$1"; shift ;;
+      *) if [[ -z "$key" ]]; then key="$1"; elif [[ -z "$rel" ]]; then rel="$1"; else die "too many arguments"; fi; shift ;;
+    esac
+  done
+  require_key "$key"
+  local sec; sec="$(secret)"
+  rel="${rel#/}"
+  [[ "$rel" != *"|"* && "$rel" != *"/../"* && "$rel" != "../"* && "$rel" != *"/.."  ]] || die "bad path"
+  local prefix=""
+  if [[ -n "$rel" ]]; then
+    local target="$SHARE_ROOT/$key/$rel"
+    if [[ -d "$target" ]]; then prefix="${rel%/}/"
+    elif [[ -f "$target" ]]; then prefix="${rel%/}"
+    else die "no such file in share: $rel"; fi
+  fi
+  local exp hash payload sig
+  exp=$(( $(date +%s) + $(ttl_seconds "$ttl") ))
+  hash="$(printf '%s' "$key" | sha256sum | cut -c1-16)"
+  payload="$(printf 'v1|%s|%s|%s' "$hash" "$prefix" "$exp" | b64url)"
+  sig="$(printf '%s' "$payload" | openssl dgst -sha256 -mac HMAC -macopt "key:$sec" -binary | b64url)"
+  if [[ -z "$prefix" || "$prefix" == */ ]]; then
+    printf '%s/l/%s.%s/\n' "$SHARE_BASE_URL" "$payload" "$sig"
+  else
+    printf '%s/l/%s.%s\n' "$SHARE_BASE_URL" "$payload" "$sig"
+  fi
+  echo "expires $(date -u -d "@$exp" +%Y-%m-%dT%H:%MZ)" >&2
+}
+
+TOKENS=".tokens.json"
+TOKEN_BYTES=32          # → 43 base64url chars
+ONCE_TTL="24h"
+
+iso_in() { date -u -d "@$(( $(date +%s) + $1 ))" +%Y-%m-%dT%H:%M:%SZ; }
+
+# Rewrites .tokens.json through jq into a temp file in the same folder, then renames it.
+tokens_update() {
+  local key="$1"; shift
+  local file="$SHARE_ROOT/$key/$TOKENS" tmp
+  tmp="$(mktemp "$SHARE_ROOT/$key/.upload-XXXXXX")"
+  if [[ -f "$file" ]]; then cat "$file"; else echo '{"tokens":[]}'; fi | jq "$@" > "$tmp" || { rm -f "$tmp"; die "could not update $TOKENS"; }
+  chmod 600 "$tmp"
+  mv "$tmp" "$file"
+}
+
+# The plain token is printed once and only its SHA-256 is stored, like the dashboard does.
+cmd_token() {
+  # Keys may start with "-", so the key is positional-first rather than option-parsed.
+  require_key "${1:-}"
+  local key="$1" label="" ttl="" once=false
+  shift
+  while (( $# )); do
+    case "$1" in
+      --label|-l) label="${2:-}"; shift 2 ;;
+      --label=*) label="${1#--label=}"; shift ;;
+      --ttl) ttl="${2:-}"; shift 2 ;;
+      --ttl=*) ttl="${1#--ttl=}"; shift ;;
+      --once) once=true; shift ;;
+      *) die "unknown option: $1" ;;
+    esac
+  done
+  command -v jq >/dev/null || die "jq is required"
+  command -v openssl >/dev/null || die "openssl is required"
+  [[ "$once" == true && -z "$ttl" ]] && ttl="$ONCE_TTL"
+  local token id hash expires="" kind="forever"
+  token="$(openssl rand "$TOKEN_BYTES" | b64url)"
+  id="$(openssl rand -hex 4)"
+  hash="$(printf '%s' "$token" | sha256sum | cut -d' ' -f1)"
+  if [[ -n "$ttl" ]]; then
+    expires="$(iso_in "$(ttl_seconds "$ttl")")"
+    kind="until $expires"
+  fi
+  [[ "$once" == true ]] && kind="one-time, $kind"
+  tokens_update "$key" --arg id "$id" --arg label "$label" --arg hash "$hash" \
+    --arg created "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg expires "$expires" --argjson once "$once" \
+    '.tokens += [{id: $id, label: $label, hash: $hash, created: $created}
+      + (if $expires != "" then {expires: $expires} else {} end)
+      + (if $once then {once: true} else {} end)]'
+  printf '%s/%s/upload/%s\n' "$SHARE_BASE_URL" "$key" "$token"
+  echo "token #$id ($kind) — shown once, store it now" >&2
+}
+
+cmd_tokens() {
+  require_key "${1:-}"
+  command -v jq >/dev/null || die "jq is required"
+  local file="$SHARE_ROOT/$1/$TOKENS"
+  [[ -f "$file" ]] || { echo "no upload tokens" >&2; return; }
+  jq -r '.tokens[] |
+    (if .once then "one-time" elif .expires then "ttl" else "forever" end) as $kind |
+    (if .once and .used then "used"
+     elif .expires and ((.expires | fromdateiso8601) <= now) then "expired"
+     else "active" end) as $status |
+    [.id, $kind, $status, (.expires // "-"), (.last_used // "never"), (.label // "")] | @tsv' "$file" |
+    while IFS=$'\t' read -r id kind status expires used label; do
+      printf '#%-9s %-9s %-8s %-21s %-21s %s\n' "$id" "$kind" "$status" "$expires" "$used" "$label"
+    done
+}
+
+cmd_revoke() {
+  require_key "${1:-}"
+  local key="$1" id="${2:-}"
+  [[ "$id" =~ ^[0-9a-f]{8}$ ]] || die "usage: share revoke <key> <token-id>"
+  command -v jq >/dev/null || die "jq is required"
+  jq -e --arg id "$id" 'any(.tokens[]; .id == $id)' "$SHARE_ROOT/$key/$TOKENS" >/dev/null 2>&1 || die "no token #$id in this share"
+  tokens_update "$key" --arg id "$id" 'del(.tokens[] | select(.id == $id))'
+  echo "revoked #$id"
+}
+
+cmd_rm() {
+  require_key "${1:-}"
+  rm -rf "${SHARE_ROOT:?}/$1"
+  echo "removed $1"
+}
+
+cmd_up() {
+  local build=0
+  [[ "${1:-}" == "--build" ]] && build=1
+  [[ -f "$SHARE_SERVER_DIR/compose.yml" ]] || die "$SHARE_SERVER_DIR/compose.yml not found"
+  [[ -f "$SHARE_ENV" ]] || die "$SHARE_ENV not found; run the bundled setup script"
+  mkdir -p "$SHARE_ROOT"
+  local dk; dk="$(docker_cmd)"
+  if (( ! build )) && container_running "$dk" "$SHARE_CONTAINER"; then
+    echo "share: server already running"
+  else
+    local args=(compose --env-file "$SHARE_ENV" up -d)
+    (( build )) && args+=(--build)
+    (cd "$SHARE_SERVER_DIR" && $dk "${args[@]}" share) || die "docker compose up failed"
+    echo "share: server started"
+  fi
+}
+
+cmd_down() {
+  local dk; dk="$(docker_cmd)"
+  if ! container_running "$dk" "$SHARE_CONTAINER"; then
+    echo "share: server already stopped"; return
+  fi
+  (cd "$SHARE_SERVER_DIR" && $dk compose --env-file "$SHARE_ENV" stop share) || die "docker compose stop failed"
+  echo "share: server stopped"
+}
+
+cmd_status() {
+  local dk; dk="$(docker_cmd)"
+  printf '%-14s %s\n' "$SHARE_CONTAINER" "$($dk inspect -f '{{.State.Status}} (since {{.State.StartedAt}})' "$SHARE_CONTAINER" 2>/dev/null || echo "missing")"
+  local n=0 d
+  for d in "$SHARE_ROOT"/*/; do [[ -d "$d" && "$(basename "$d")" =~ ^[A-Za-z0-9_-]{20,128}$ ]] && n=$((n+1)); done
+  echo "shares: $n"
+  echo "base URL: $SHARE_BASE_URL"
+}
+
+cmd_creds() {
+  local login pass auth_path
+  login="$(env_field SHARE_LOGIN)"; pass="$(env_field SHARE_PASSWORD)"
+  auth_path="$(env_field SHARE_AUTH_PATH)"
+  [[ -n "$login" && -n "$pass" ]] || die "SHARE_LOGIN / SHARE_PASSWORD not set in $SHARE_ENV (dashboard disabled)"
+  echo "url:      $SHARE_BASE_URL/${auth_path:-owner}"
+  echo "login:    $login"
+  echo "password: $pass"
+}
+
+case "${1:-}" in
+  new)  shift; cmd_new "$@" ;;
+  add)  shift; cmd_add "$@" ;;
+  edit) shift; cmd_edit "$@" ;;
+  ls|list) cmd_ls ;;
+  url)  require_key "${2:-}"; share_url "$2" ;;
+  path) require_key "${2:-}"; printf '%s\n' "$SHARE_ROOT/$2" ;;
+  link) shift; cmd_link "$@" ;;
+  token) shift; cmd_token "$@" ;;
+  feedback) shift; cmd_feedback "$@" ;;
+  tokens) shift; cmd_tokens "$@" ;;
+  revoke) shift; cmd_revoke "$@" ;;
+  rotate) shift; cmd_rotate "$@" ;;
+  rm|remove) shift; cmd_rm "$@" ;;
+  up|start) shift; cmd_up "$@" ;;
+  down|stop) cmd_down ;;
+  status) cmd_status ;;
+  creds) cmd_creds ;;
+  -h|--help|help|"") usage ;;
+  *) die "unknown command: $1 (see 'share help')" ;;
+esac

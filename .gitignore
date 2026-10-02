@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+data/
+/share/share/server/share
+/check-slack/channels.json

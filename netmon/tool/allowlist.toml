@@ -1,0 +1,27 @@
+[host]
+addresses = []
+
+[alerts]
+suppress = []
+escalate_inbound_severity = 1
+
+[binaries]
+trusted = []
+
+[destinations]
+trusted = []
+
+[ports]
+normal = [22, 53, 80, 123, 443, 853]
+
+[thresholds]
+upload_bytes_per_flow = 50_000_000
+upload_bytes_per_dest_window = 200_000_000
+baseline_hours = 24
+
+[ssh]
+protected_users = []
+protected_failures_to_ban = 5
+bruteforce_ip_failures = 10
+bruteforce_subnet_failures = 30
+trusted_ttl_days = 7

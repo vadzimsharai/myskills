@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Slack review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<script>
+  try { const t = localStorage.getItem('sk:theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch {}
+</script>
+<style>
+:root{
+  --bg:#f6f6f3; --surface:#fff; --sunk:#efefea; --line:#e3e3dc; --line-strong:#cfcfc6;
+  --fg:#22231f; --muted:#6b6d66; --faint:#9a9c94;
+  --accent:#2f6b5d; --accent-ink:#fff; --accent-soft:#e2eeea;
+  --high:#c0392b; --medium:#c27a12; --low:#8a8d85;
+  --s-needs:#c25a1a; --s-open:#3e6aa8; --s-watch:#7a5ea8; --s-done:#5c8a5e; --s-muted:#9a9c94;
+  --k-problem:#b8432f; --k-request:#c27a12; --k-info:#3e6aa8; --k-decision:#5c8a5e;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141614; --surface:#1b1e1b; --sunk:#222622; --line:#2b302b; --line-strong:#3a423a;
+  --fg:#e6e8e3; --muted:#a2a79f; --faint:#737a71;
+  --accent:#78c2ad; --accent-ink:#0f1512; --accent-soft:#1f2e29;
+  --high:#ef7a6a; --medium:#e8b45a; --low:#80867e;
+  --s-needs:#ee9a5c; --s-open:#8fb2e6; --s-watch:#b9a0e6; --s-done:#8cbf8e; --s-muted:#737a71;
+  --k-problem:#ef8a74; --k-request:#e8b45a; --k-info:#8fb2e6; --k-decision:#8cbf8e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141614; --surface:#1b1e1b; --sunk:#222622; --line:#2b302b; --line-strong:#3a423a;
+  --fg:#e6e8e3; --muted:#a2a79f; --faint:#737a71;
+  --accent:#78c2ad; --accent-ink:#0f1512; --accent-soft:#1f2e29;
+  --high:#ef7a6a; --medium:#e8b45a; --low:#80867e;
+  --s-needs:#ee9a5c; --s-open:#8fb2e6; --s-watch:#b9a0e6; --s-done:#8cbf8e; --s-muted:#737a71;
+  --k-problem:#ef8a74; --k-request:#e8b45a; --k-info:#8fb2e6; --k-decision:#8cbf8e; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+code{font:.86em var(--f-mono);background:var(--sunk);padding:1px 5px;border-radius:4px}
+pre{background:var(--sunk);padding:10px 12px;border-radius:8px;overflow-x:auto}
+pre code{background:transparent;padding:0}
+table{border-collapse:collapse;font-size:.92em;display:block;overflow-x:auto;margin:8px 0}
+th,td{border-bottom:1px solid var(--line);padding:4px 12px 4px 0;text-align:left;vertical-align:top}
+th{font-weight:600;color:var(--muted)}
+blockquote{margin:8px 0;padding:2px 12px;border-left:2px solid var(--line-strong);color:var(--muted)}
+.md>:first-child{margin-top:0}.md>:last-child{margin-bottom:0}
+.md p{margin:0 0 .8em}.md ul,.md ol{margin:0 0 .8em;padding-left:1.3em}.md li{margin:.15em 0}
+.md strong{font-weight:600}.md{overflow-wrap:anywhere}
+
+.wrap{max-width:1180px;margin:0 auto;padding:28px 24px 120px}
+@media (max-width:700px){.wrap{padding:18px 16px 100px}}
+
+header h1{font-size:1.45rem;font-weight:600;margin:0 0 4px}
+.lastcheck{color:var(--muted);font-size:.9rem;margin:0 0 14px}
+.lastcheck b{color:var(--fg);font-weight:500}
+.counters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.counter{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 12px;font-size:.86rem;cursor:pointer;color:var(--muted)}
+.counter b{color:var(--fg);font-variant-numeric:tabular-nums;margin-right:4px}
+.counter.on{border-color:var(--accent);background:var(--accent-soft);color:var(--fg)}
+
+.toolbar{padding:10px 0;border-bottom:1px solid var(--line);margin-bottom:14px;display:grid;gap:8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.search{flex:1 1 260px;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:.92rem}
+.seg{display:inline-flex;background:var(--sunk);border-radius:8px;padding:3px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 8px;font-size:.85rem;max-width:200px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:.85rem;color:var(--muted);white-space:nowrap}
+.btn:hover{color:var(--fg);border-color:var(--line-strong)}
+.tags{display:flex;flex-wrap:wrap;gap:5px}
+.tag{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:0 9px;font-size:.78rem;cursor:pointer;color:var(--muted);line-height:1.7}
+.tag.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tag i{font-style:normal;color:var(--faint);margin-left:3px}
+.tag.on i{color:inherit;opacity:.75}
+.morebtn{border:0;background:none;color:var(--accent);cursor:pointer;font-size:.78rem;padding:0 4px}
+
+.topic{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin:0 0 10px;overflow:hidden}
+.topic>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:12px 10px auto minmax(0,1fr) auto;gap:4px 10px;align-items:baseline;padding:10px 14px}
+.topic>summary::-webkit-details-marker{display:none}
+.topic>summary::before{content:"▸";color:var(--faint);font-size:.8rem;transition:transform .15s}
+.topic[open]>summary::before{transform:rotate(90deg)}
+.topic>summary:hover{background:var(--sunk)}
+.tid{font:500 .75rem var(--f-mono);color:var(--faint)}
+.ttitle{font-weight:600;min-width:0}
+.tmeta{font-size:.8rem;color:var(--muted);white-space:nowrap;display:flex;gap:6px;align-items:center}
+.tsum{grid-column:4 / -1;font-size:.86rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topic[open] .tsum{white-space:normal}
+.tbody{border-top:1px solid var(--line)}
+.tactions{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--sunk);font-size:.82rem;align-items:center}
+.tactions span{color:var(--muted);margin-right:auto}
+
+.to{font-size:.72rem;color:var(--muted);white-space:nowrap}
+.to-me,.to-backend{color:var(--fg);font-weight:600}
+.kind{font-size:.72rem;font-weight:600;letter-spacing:.02em;text-transform:uppercase;padding:0 6px;border-radius:4px;border:1px solid currentColor;line-height:1.5}
+.k-problem{color:var(--k-problem)}.k-request{color:var(--k-request)}.k-info{color:var(--k-info)}.k-decision{color:var(--k-decision)}
+.sev{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.sev-high{background:var(--high)}.sev-medium{background:var(--medium)}.sev-low{background:var(--low)}.sev-none{background:transparent;border:1px solid var(--line-strong)}
+.st{font-size:.75rem;padding:0 7px;border-radius:999px;white-space:nowrap;line-height:1.7;border:1px solid currentColor}
+.st-needs-you{color:var(--s-needs)}.st-open{color:var(--s-open)}.st-watching{color:var(--s-watch)}.st-done{color:var(--s-done)}.st-muted{color:var(--s-muted)}
+.new{font-size:.7rem;font-weight:600;color:var(--accent-ink);background:var(--accent);border-radius:4px;padding:0 5px;line-height:1.6}
+
+details.item{border-top:1px solid var(--line);scroll-margin-top:12px}
+details.item:first-child{border-top:0}
+.day{font-size:.82rem;font-weight:600;color:var(--muted);margin:18px 0 6px;letter-spacing:.02em}
+.day:first-child{margin-top:0}
+.flat details.item{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin:0 0 6px}
+details.item>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:10px 3.2em minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:7px 14px}
+details.item>summary::-webkit-details-marker{display:none}
+details.item>summary:hover{background:var(--sunk)}
+details.item[open]>summary{background:var(--accent-soft)}
+.iid{font:500 .75rem var(--f-mono);color:var(--faint)}
+.ititle{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.imeta{grid-column:3 / 4;font-size:.78rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.iask{grid-column:3 / 4;font-size:.84rem;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.iask b{color:var(--s-needs);font-weight:600}
+.iask.none{color:var(--faint)}
+.iask a{color:inherit}
+.askbox{border-left:3px solid var(--s-needs);background:var(--sunk);border-radius:0 8px 8px 0;padding:8px 12px}
+.askbox.none{border-left-color:var(--line-strong)}
+.iright{grid-row:1 / span 3;grid-column:4;display:flex;gap:6px;align-items:center}
+.s-done .ititle,.s-muted .ititle{color:var(--faint)}
+@media (max-width:700px){
+  details.item>summary{grid-template-columns:10px minmax(0,1fr)}
+  .iid{display:none}
+  details.item>summary .sev{grid-row:1}
+  .ititle{grid-column:2 / -1;grid-row:1;white-space:normal}
+  .iright{grid-column:2 / -1;grid-row:2;flex-wrap:wrap}
+  .iask{grid-column:2 / -1;grid-row:3;white-space:normal;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+  .imeta{grid-column:2 / -1;grid-row:4}
+  .topic>summary{grid-template-columns:12px 10px minmax(0,1fr)}.topic .tid{display:none}.tmeta,.tsum{grid-column:3 / -1}
+}
+
+.ibody{padding:12px 14px 16px 42px;display:grid;gap:12px}
+@media (max-width:700px){.ibody{padding:12px 14px 16px}}
+.block h4{margin:0 0 4px;font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.links{display:flex;flex-wrap:wrap;gap:6px}
+.links a{font-size:.84rem;border:1px solid var(--line);border-radius:6px;padding:1px 8px;text-decoration:none;background:var(--surface)}
+.links a.slack{border-color:var(--accent)}
+.thread{display:grid;gap:6px}
+.msg{font-size:.86rem;border-left:2px solid var(--line-strong);padding:2px 10px}
+.msg.user{border-color:var(--accent)}
+.msg .who{font-size:.74rem;color:var(--faint)}
+.msg.pending{opacity:.7;border-style:dashed}
+.acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.acts textarea{flex:1 1 100%;min-height:54px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;font-size:.88rem;resize:vertical}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.empty{color:var(--muted);text-align:center;padding:40px 0}
+details.checks{margin-top:28px;color:var(--muted);font-size:.86rem}
+details.checks summary{cursor:pointer}
+details.checks li{margin:4px 0}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:8px;font-size:.88rem;opacity:0;transition:.2s;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="row" style="justify-content:space-between">
+      <h1 id="title">Slack review</h1>
+      <button class="btn" id="theme" type="button">Theme</button>
+    </div>
+    <p class="lastcheck" id="lastcheck"></p>
+    <div class="counters" id="counters"></div>
+  </header>
+
+  <div class="toolbar">
+    <div class="row">
+      <input class="search" id="search" value="" type="search" placeholder="Search: text, people, channel, ID…  ( / )" autocomplete="off">
+      <div class="seg" id="views">
+        <button type="button" data-view="topics" aria-pressed="true">By topic</button>
+        <button type="button" data-view="flat" aria-pressed="false">Timeline</button>
+        <button type="button" data-view="days" aria-pressed="false">By date</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="seg" id="statusSeg">
+        <button type="button" data-status="active">Active</button>
+        <button type="button" data-status="needs-you">Needs me</button>
+        <button type="button" data-status="new">New</button>
+        <button type="button" data-status="closed">Closed</button>
+        <button type="button" data-status="all">All</button>
+      </div>
+      <div class="seg" id="kindSeg"></div>
+      <select id="channel"><option value="">All channels</option></select>
+      <select id="person"><option value="">All people</option></select>
+      <select id="sort">
+        <option value="updated">Newest first</option>
+        <option value="severity">Most important first</option>
+      </select>
+      <button class="btn" id="expand" type="button">Expand all</button>
+      <button class="btn" id="reset" type="button">Reset</button>
+    </div>
+    <div class="tags" id="tagbar"></div>
+  </div>
+
+  <main id="list"></main>
+  <details class="checks" id="checks"><summary>Check history</summary><ul id="checklist"></ul></details>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const KIND = { problem: 'Problem', request: 'Request', info: 'Info', decision: 'Decision' };
+  const STATUS = { 'needs-you': 'Needs you', open: 'Open', watching: 'Watching', done: 'Resolved', muted: 'Muted' };
+  const TO = { me: 'You', backend: 'Backend', other: 'Others' };
+  const ACTIVE = new Set(['needs-you', 'open', 'watching']);
+  const SEV_RANK = { high: 0, medium: 1, low: 2 };
+  const ACTION_LABEL = { done: 'Resolved', mute: 'Muted', dig: 'Investigate further', note: 'Note', reopen: 'Reopen' };
+  const TAGS_SHOWN = 14;
+
+  const store = {
+    get(k, d = '') { try { return localStorage.getItem('sk:' + k) ?? d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('sk:' + k, v); } catch {} },
+  };
+  let state = { topics: [], items: [], checks: [] };
+  let pending = [];
+  let f = loadFilters();
+  let allTags = false;
+  // "New" is relative to the previous visit: items updated after it keep the badge for this whole visit.
+  const prevVisit = store.get('visit', '');
+  store.set('visit', new Date().toISOString());
+
+  function loadFilters() {
+    const d = { q: '', status: 'active', kinds: [], channel: '', person: '', tags: [], sort: 'updated', view: 'topics' };
+    let saved = {};
+    try { saved = JSON.parse(store.get('filters', '{}')); } catch {}
+    // A link like ?status=needs-you&view=flat opens a ready-made slice (a bookmark for "what is on me").
+    const url = Object.fromEntries(new URLSearchParams(location.search));
+    if (url.tag) url.tags = url.tag.split(',');
+    if (url.kind) url.kinds = url.kind.split(',');
+    return { ...d, ...saved, q: '', ...url };
+  }
+  function saveFilters() {
+    const { q, ...rest } = f;
+    store.set('filters', JSON.stringify(rest));
+    if (location.search) history.replaceState(null, '', location.pathname + location.hash);
+  }
+
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const md = s => s ? DOMPurify.sanitize(marked.parse(String(s), { breaks: true })) : '';
+  const fmtDate = iso => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return isNaN(d) ? iso : d.toLocaleString('en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  };
+  const srcDate = it => it.source?.at || (it.source?.ts ? new Date(parseFloat(it.source.ts) * 1000).toISOString() : it.created);
+
+  // Marks sent from this page but not yet merged by sk pull show up immediately.
+  function pendingFor(it) { return pending.filter(p => p.data.item === it.id || p.data.item === it.topic); }
+  function effStatus(it) {
+    let s = it.status;
+    for (const p of pendingFor(it)) {
+      if (p.data.action === 'done') s = 'done';
+      else if (p.data.action === 'mute') s = 'muted';
+      else if (p.data.action === 'reopen') s = 'open';
+    }
+    return s;
+  }
+  const isNew = it => !!prevVisit && (it.updated || it.created || '') > prevVisit;
+
+  function searchText(it) {
+    const t = state.topics.find(x => x.id === it.topic) || {};
+    return [it.id, it.title, it.ask, TO[it.to], it.summary, it.body, it.findings, (it.tags || []).join(' '), (it.people || []).join(' '),
+      it.source?.channel, it.source?.author, t.title, t.summary, (it.thread || []).map(m => m.text).join(' ')]
+      .join(' ').toLowerCase();
+  }
+  function matches(it) {
+    const s = effStatus(it);
+    if (f.status === 'active' && !ACTIVE.has(s)) return false;
+    if (f.status === 'needs-you' && s !== 'needs-you') return false;
+    if (f.status === 'closed' && ACTIVE.has(s)) return false;
+    if (f.status === 'new' && !isNew(it)) return false;
+    if (f.kinds.length && !f.kinds.includes(it.kind)) return false;
+    if (f.channel && it.source?.channel !== f.channel) return false;
+    if (f.person && !(it.people || []).includes(f.person) && it.source?.author !== f.person) return false;
+    if (f.tags.length && !f.tags.every(t => (it.tags || []).includes(t))) return false;
+    if (f.q) return f.q.toLowerCase().split(/\s+/).filter(Boolean).every(w => searchText(it).includes(w));
+    return true;
+  }
+  function cmp(a, b) {
+    if (f.sort === 'severity') {
+      const d = (SEV_RANK[a.severity] ?? 3) - (SEV_RANK[b.severity] ?? 3);
+      if (d) return d;
+    }
+    return (b.updated || b.created || '').localeCompare(a.updated || a.created || '');
+  }
+
+  // ---------- render
+  function renderHeader() {
+    const last = (state.checks || []).slice(-1)[0];
+    $('lastcheck').innerHTML = last
+      ? `Last check <b>${esc(fmtDate(last.at))}</b>${last.mode === 'daily' ? ' (scheduled)' : ''} — ${esc(last.summary)}`
+      : 'No checks yet.';
+    const c = s => state.items.filter(i => effStatus(i) === s).length;
+    const items = [
+      ['needs-you', c('needs-you'), 'needs you'],
+      ['active', state.items.filter(i => ACTIVE.has(effStatus(i))).length, 'active'],
+      ['new', state.items.filter(isNew).length, 'new since last visit'],
+      ['closed', c('done') + c('muted'), 'closed'],
+    ];
+    $('counters').innerHTML = items.map(([k, n, l]) =>
+      `<button type="button" class="counter${f.status === k ? ' on' : ''}" data-status="${k}"><b>${n}</b>${l}</button>`).join('');
+    $('checklist').innerHTML = (state.checks || []).slice().reverse().slice(0, 60)
+      .map(ch => `<li><b>${esc(fmtDate(ch.at))}</b>${ch.mode === 'daily' ? ' · scheduled' : ''} — ${esc(ch.summary)}</li>`).join('');
+  }
+
+  function renderControls() {
+    document.querySelectorAll('#statusSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.status === f.status)));
+    document.querySelectorAll('#views button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === f.view)));
+    const kindCount = k => state.items.filter(i => i.kind === k && ACTIVE.has(effStatus(i))).length;
+    $('kindSeg').innerHTML = Object.entries(KIND).map(([k, l]) =>
+      `<button type="button" data-kind="${k}" aria-pressed="${f.kinds.includes(k)}">${l} <span style="color:var(--faint)">${kindCount(k)}</span></button>`).join('');
+    const fill = (sel, values, label) => {
+      const cur = f[sel];
+      $(sel).innerHTML = `<option value="">${label}</option>` + values.map(v => `<option${v === cur ? ' selected' : ''}>${esc(v)}</option>`).join('');
+    };
+    const uniq = arr => [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'en'));
+    fill('channel', uniq(state.items.map(i => i.source?.channel)), 'All channels');
+    fill('person', uniq(state.items.flatMap(i => [...(i.people || []), i.source?.author])), 'All people');
+    $('sort').value = f.sort;
+    const freq = new Map();
+    state.items.forEach(i => (i.tags || []).forEach(t => freq.set(t, (freq.get(t) || 0) + 1)));
+    const tags = [...freq.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'en'));
+    const shown = allTags ? tags : tags.filter(([t], i) => i < TAGS_SHOWN || f.tags.includes(t));
+    $('tagbar').innerHTML = shown.map(([t, n]) =>
+      `<button type="button" class="tag${f.tags.includes(t) ? ' on' : ''}" data-tag="${esc(t)}">#${esc(t)}<i>${n}</i></button>`).join('')
+      + (tags.length > TAGS_SHOWN ? `<button type="button" class="morebtn" id="moreTags">${allTags ? 'less' : `more ${tags.length - shown.length}`}</button>` : '');
+  }
+
+  function msgHTML(m, isPending) {
+    const who = m.who === 'user' ? 'You' : 'AI';
+    const act = m.action && m.action !== 'note' ? ` · ${ACTION_LABEL[m.action] || m.action}` : '';
+    return `<div class="msg ${m.who === 'user' ? 'user' : ''}${isPending ? ' pending' : ''}">
+      <div class="who">${who}${act} · ${esc(fmtDate(m.at))}${isPending ? ' · will review at the next check' : ''}</div>
+      ${m.text ? `<div class="md">${md(m.text)}</div>` : ''}</div>`;
+  }
+
+  function itemHTML(it) {
+    const s = effStatus(it);
+    const src = it.source || {};
+    const meta = [src.channel ? '#' + src.channel : '', src.author, fmtDate(srcDate(it)), ...(it.tags || []).map(t => '#' + t)]
+      .filter(Boolean).map(esc).join(' · ');
+    const links = [src.url ? `<a class="slack" href="${esc(src.url)}" target="_blank" rel="noopener">Slack thread ↗</a>` : '',
+      ...(it.links || []).map(l => typeof l === 'string' ? { url: l } : l).map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.title || l.url)}</a>`)].join('');
+    const askText = it.ask ? DOMPurify.sanitize(marked.parseInline(String(it.ask)), { ALLOWED_TAGS: ['code', 'strong', 'em'] }) : '';
+    const askLine = askText ? `<span class="iask${s === 'needs-you' ? '' : ' none'}">${s === 'needs-you' ? '<b>→</b> ' : ''}${askText}</span>` : '';
+    const thread = [...(it.thread || []).map(m => msgHTML(m, false)), ...pendingFor(it).map(p => msgHTML({ who: 'user', ...p.data, at: p.at }, true))];
+    return `<details class="item s-${s}" id="i-${esc(it.id)}" data-id="${esc(it.id)}">
+      <summary>
+        <span class="sev sev-${it.severity || 'none'}" title="${esc(it.severity || '')}"></span>
+        <span class="iid">${esc(it.id)}</span>
+        <span class="ititle">${esc(it.title)}</span>
+        <span class="iright">${isNew(it) ? '<span class="new">new</span>' : ''}${it.dig ? '<span class="st st-open">investigating</span>' : ''}${it.to ? `<span class="to to-${esc(it.to)}">${esc(TO[it.to] || it.to)}</span>` : ''}<span class="kind k-${it.kind}">${KIND[it.kind] || it.kind}</span><span class="st st-${s}">${STATUS[s] || s}</span></span>
+        ${askLine}
+        <span class="imeta">${meta}</span>
+      </summary>
+      <div class="ibody">
+        ${it.ask ? `<div class="block askbox${s === 'needs-you' ? '' : ' none'}"><h4>${s === 'needs-you' ? 'What you need to do' : 'From you'}</h4><div class="md">${md(it.ask)}</div></div>` : ''}
+        <div class="block md">${md(it.summary)}</div>
+        ${it.body ? `<div class="block"><h4>Analysis</h4><div class="md">${md(it.body)}</div></div>` : ''}
+        ${it.findings ? `<div class="block"><h4>What I found</h4><div class="md">${md(it.findings)}</div></div>` : ''}
+        ${(it.people || []).length ? `<div class="block"><h4>People</h4>${(it.people || []).map(esc).join(', ')}</div>` : ''}
+        ${links ? `<div class="links">${links}</div>` : ''}
+        ${thread.length ? `<div class="block"><h4>History</h4><div class="thread">${thread.join('')}</div></div>` : ''}
+        <div class="acts">
+          <textarea data-note="${esc(it.id)}" placeholder="Note or question to review at the next check"></textarea>
+          <button class="btn primary" type="button" data-act="note" data-for="${esc(it.id)}">Send</button>
+          ${ACTIVE.has(s)
+            ? `<button class="btn" type="button" data-act="done" data-for="${esc(it.id)}">✓ Resolved</button>
+               <button class="btn" type="button" data-act="mute" data-for="${esc(it.id)}">Muted</button>
+               <button class="btn" type="button" data-act="dig" data-for="${esc(it.id)}">Investigate further</button>`
+            : `<button class="btn" type="button" data-act="reopen" data-for="${esc(it.id)}">Reopen</button>`}
+        </div>
+      </div>
+    </details>`;
+  }
+
+  function topicHTML(t, items, total) {
+    const active = total.filter(i => ACTIVE.has(effStatus(i)));
+    const sev = active.map(i => i.severity).sort((a, b) => (SEV_RANK[a] ?? 3) - (SEV_RANK[b] ?? 3))[0];
+    const needs = active.filter(i => effStatus(i) === 'needs-you').length;
+    const fresh = items.some(isNew);
+    return `<details class="topic" data-topic="${esc(t.id)}">
+      <summary>
+        <span class="sev sev-${sev || 'none'}"></span>
+        <span class="tid">${esc(t.id)}</span>
+        <span class="ttitle">${esc(t.title)}</span>
+        <span class="tmeta">${fresh ? '<span class="new">new</span>' : ''}${needs ? `<span class="st st-needs-you">${needs} need your input</span>` : ''}<span class="kind k-${t.kind}">${KIND[t.kind] || ''}</span><span>${active.length}/${total.length}</span></span>
+        ${t.summary ? `<span class="tsum">${esc(t.summary)}</span>` : ''}
+      </summary>
+      <div class="tbody">
+        <div class="tactions"><span>${(t.tags || []).map(x => '#' + esc(x)).join(' ')}</span>
+          <button class="btn" type="button" data-act="done" data-for="${esc(t.id)}">✓ Entire topic resolved</button>
+          <button class="btn" type="button" data-act="mute" data-for="${esc(t.id)}">Entire topic muted</button>
+        </div>
+        ${items.map(itemHTML).join('')}
+      </div>
+    </details>`;
+  }
+
+  function render() {
+    const openItems = new Set([...document.querySelectorAll('details.item[open]')].map(d => d.dataset.id));
+    const openTopics = new Set([...document.querySelectorAll('details.topic[open]')].map(d => d.dataset.topic));
+    const notes = Object.fromEntries([...document.querySelectorAll('textarea[data-note]')].filter(t => t.value).map(t => [t.dataset.note, t.value]));
+    renderHeader();
+    renderControls();
+    const shown = state.items.filter(matches).sort(cmp);
+    const list = $('list');
+    list.className = f.view === 'topics' ? '' : 'flat';
+    if (!shown.length) {
+      list.innerHTML = `<div class="empty">${state.items.length ? 'No items match the filters.' : 'Nothing here yet; run /check-slack.'}</div>`;
+      return;
+    }
+    if (f.view === 'flat') {
+      list.innerHTML = shown.map(itemHTML).join('');
+    } else if (f.view === 'days') {
+      const dayOf = it => (srcDate(it) || '').slice(0, 10);
+      const byDay = new Map();
+      shown.slice().sort((a, b) => (srcDate(b) || '').localeCompare(srcDate(a) || ''))
+        .forEach(i => { const d = dayOf(i); if (!byDay.has(d)) byDay.set(d, []); byDay.get(d).push(i); });
+      list.innerHTML = [...byDay.entries()].map(([d, items]) => {
+        const label = d ? new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' }) : 'No date';
+        return `<div class="day">${esc(label)} · ${items.length}</div>` + items.map(itemHTML).join('');
+      }).join('');
+    } else {
+      const order = [];
+      const byTopic = new Map();
+      shown.forEach(i => { if (!byTopic.has(i.topic)) { byTopic.set(i.topic, []); order.push(i.topic); } byTopic.get(i.topic).push(i); });
+      list.innerHTML = order.map(tid => {
+        const t = state.topics.find(x => x.id === tid) || { id: tid, title: 'No topic' };
+        return topicHTML(t, byTopic.get(tid), state.items.filter(i => i.topic === tid));
+      }).join('');
+      const autoOpen = order.length <= 3 || !!f.q;
+      document.querySelectorAll('details.topic').forEach(d => { if (autoOpen || openTopics.has(d.dataset.topic)) d.open = true; });
+    }
+    openItems.forEach(id => $('i-' + id)?.setAttribute('open', ''));
+    Object.entries(notes).forEach(([id, v]) => { const t = document.querySelector(`textarea[data-note="${CSS.escape(id)}"]`); if (t) t.value = v; });
+  }
+
+  // ---------- data
+  function toast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('on');
+    clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('on'), 2400);
+  }
+  async function loadPending() {
+    try {
+      const res = await fetch('feedback', { cache: 'no-store' });
+      if (!res.ok) return [];
+      return (await res.text()).split('\n').filter(Boolean).map(l => { try { return JSON.parse(l); } catch { return null; } })
+        .filter(e => e && e.at > (state.processed_until || ''));
+    } catch { return []; }
+  }
+  async function send(target, action) {
+    const ta = document.querySelector(`textarea[data-note="${CSS.escape(target)}"]`);
+    const text = ta?.value.trim() || '';
+    if (action === 'note' && !text) { ta?.focus(); return; }
+    const res = await fetch('feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item: target, action, text }) });
+    if (!res.ok) { toast('Could not send (' + res.status + ')'); return; }
+    const { at } = await res.json();
+    pending.push({ at, data: { item: target, action, text } });
+    if (ta) ta.value = '';
+    render();
+    toast(ACTION_LABEL[action] + ' — will review at the next check');
+  }
+  async function load() {
+    state = await (await fetch('state.json', { cache: 'no-store' })).json();
+    pending = await loadPending();
+    if (state.title) { $('title').textContent = state.title; document.title = state.title; }
+    if (f.q) $('search').value = f.q;
+    render();
+    if (location.hash.startsWith('#i-')) {
+      const el = $(location.hash.slice(1));
+      if (el) { el.open = true; el.closest('details.topic')?.setAttribute('open', ''); el.scrollIntoView({ block: 'start' }); }
+    }
+  }
+  async function poll() {
+    try {
+      const fresh = await (await fetch('state.json', { cache: 'no-store' })).json();
+      if (fresh.updated === state.updated) return;
+      state = fresh;
+      pending = await loadPending();
+      render();
+      toast('Updated');
+    } catch {}
+  }
+
+  // ---------- events
+  const THEMES = ['auto', 'light', 'dark'];
+  const THEME_LABEL = { auto: 'Theme: auto', light: 'Theme: light', dark: 'Theme: dark' };
+  const curTheme = () => document.documentElement.dataset.theme || 'auto';
+  function setTheme(t) {
+    if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+    store.set('theme', t); $('theme').textContent = THEME_LABEL[t];
+  }
+
+  let qTimer;
+  document.addEventListener('input', e => {
+    if (e.target.id === 'search') { clearTimeout(qTimer); qTimer = setTimeout(() => { f.q = e.target.value.trim(); render(); }, 150); }
+  });
+  document.addEventListener('change', e => {
+    const id = e.target.id;
+    if (['channel', 'person', 'sort'].includes(id)) { f[id] = e.target.value; saveFilters(); render(); }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && !e.target.matches('input, textarea')) { e.preventDefault(); $('search').focus(); }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.matches('textarea[data-note]')) send(e.target.dataset.note, 'note');
+  });
+  document.addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.act) { e.preventDefault(); send(b.dataset.for, b.dataset.act); return; }
+    if (b.dataset.status) f.status = b.dataset.status;
+    else if (b.dataset.view) f.view = b.dataset.view;
+    else if (b.dataset.kind) f.kinds = f.kinds.includes(b.dataset.kind) ? f.kinds.filter(k => k !== b.dataset.kind) : [...f.kinds, b.dataset.kind];
+    else if (b.dataset.tag) f.tags = f.tags.includes(b.dataset.tag) ? f.tags.filter(t => t !== b.dataset.tag) : [...f.tags, b.dataset.tag];
+    else if (b.id === 'moreTags') allTags = !allTags;
+    else if (b.id === 'reset') { f = { ...loadFilters(), status: 'active', kinds: [], channel: '', person: '', tags: [] }; $('search').value = ''; f.q = ''; }
+    else if (b.id === 'theme') { setTheme(THEMES[(THEMES.indexOf(curTheme()) + 1) % THEMES.length]); return; }
+    else if (b.id === 'expand') {
+      const all = [...document.querySelectorAll('details.topic, details.item')];
+      const open = all.some(d => !d.open);
+      all.forEach(d => { d.open = open; });
+      b.textContent = open ? 'Collapse all' : 'Expand all';
+      return;
+    } else return;
+    saveFilters();
+    render();
+  });
+
+  $('theme').textContent = THEME_LABEL[curTheme()];
+  load().catch(err => { $('title').textContent = 'Could not load state.json'; console.error(err); });
+  setInterval(poll, 20000);
+})();
+</script>
+</body>
+</html>
