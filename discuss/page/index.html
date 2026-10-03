@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Discussion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" id="hl-light" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
 <link rel="stylesheet" id="hl-dark" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" disabled>
 <script>
@@ -15,33 +15,48 @@
 <style>
 /* Layout: navigation rail + wide reading area; an open item splits into text (left) and a sticky answer panel (right) */
 :root{
-  --bg:#f7f7f4; --surface:#ffffff; --sunk:#f0f0ec; --line:#e4e4de; --line-strong:#d3d3cb;
-  --fg:#22231f; --muted:#6b6d66; --faint:#9a9c94;
-  --accent:#2f6b5d; --accent-ink:#ffffff; --accent-soft:#e3efeb;
-  --wait:#c25a1a; --sent:#b8930a; --work:#3e6aa8; --done:#5c8a5e;
-  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  --r:10px;
+  --bg:#f6f7f9; --surface:#ffffff; --sunk:#f1f3f6; --line:rgba(20,28,48,.09); --line-strong:rgba(20,28,48,.16);
+  --fg:#15171c; --muted:#5a6170; --faint:#6b7280;
+  --accent:#3f5ae0; --accent-2:#6a45f0; --accent-ink:#ffffff; --accent-soft:rgba(63,90,224,.10);
+  --wait:#b86e00; --sent:#6a45f0; --added:#c0267e; --work:#0a72c2; --done:#16804a; --err:#c62f2f;
+  --shadow-cta:0 4px 14px rgba(63,90,224,.25); --ring:0 0 0 3px rgba(63,90,224,.16);
+  --user-bubble:#e4f4ea; --user-line:rgba(22,128,74,.22); --ai-bubble:rgba(10,132,110,.06); --ai-line:rgba(10,132,110,.30); --ai-name:#0a846e; --user-name:#16804a;
+  --gradient:linear-gradient(180deg,var(--accent),var(--accent-2));
+  --accent-gradient:linear-gradient(135deg,#6e8bff,#7c5cff 55%,#4ad9c0);
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:12px;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#141614; --surface:#1b1e1b; --sunk:#202420; --line:#2a2f2a; --line-strong:#384038;
-  --fg:#e6e8e3; --muted:#a2a79f; --faint:#737a71;
-  --accent:#78c2ad; --accent-ink:#0f1512; --accent-soft:#1f2e29;
-  --wait:#ee9a5c; --sent:#e8cc5a; --work:#8fb2e6; --done:#8cbf8e; color-scheme:dark}}
+  --bg:#0b0c0e; --surface:#15171b; --sunk:#1b1e24; --line:rgba(255,255,255,.07); --line-strong:rgba(255,255,255,.13);
+  --fg:#e8eaf0; --muted:#9aa1ac; --faint:#6b7280;
+  --accent:#6e8bff; --accent-2:#7c5cff; --accent-ink:#ffffff; --accent-soft:rgba(110,139,255,.12);
+  --wait:#f5a623; --sent:#a78bfa; --added:#f472b6; --work:#4cb0ff; --done:#34c77b; --err:#ff5a5a;
+  --shadow-cta:0 4px 14px rgba(110,139,255,.28); --ring:0 0 0 3px rgba(110,139,255,.16);
+  --user-bubble:rgba(52,199,123,.16); --user-line:rgba(52,199,123,.35); --ai-bubble:rgba(74,217,192,.07); --ai-line:rgba(74,217,192,.32); --ai-name:#4ad9c0; --user-name:#34c77b; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#141614; --surface:#1b1e1b; --sunk:#202420; --line:#2a2f2a; --line-strong:#384038;
-  --fg:#e6e8e3; --muted:#a2a79f; --faint:#737a71;
-  --accent:#78c2ad; --accent-ink:#0f1512; --accent-soft:#1f2e29;
-  --wait:#ee9a5c; --sent:#e8cc5a; --work:#8fb2e6; --done:#8cbf8e; color-scheme:dark}
+  --bg:#0b0c0e; --surface:#15171b; --sunk:#1b1e24; --line:rgba(255,255,255,.07); --line-strong:rgba(255,255,255,.13);
+  --fg:#e8eaf0; --muted:#9aa1ac; --faint:#6b7280;
+  --accent:#6e8bff; --accent-2:#7c5cff; --accent-ink:#ffffff; --accent-soft:rgba(110,139,255,.12);
+  --wait:#f5a623; --sent:#a78bfa; --added:#f472b6; --work:#4cb0ff; --done:#34c77b; --err:#ff5a5a;
+  --shadow-cta:0 4px 14px rgba(110,139,255,.28); --ring:0 0 0 3px rgba(110,139,255,.16);
+  --user-bubble:rgba(52,199,123,.16); --user-line:rgba(52,199,123,.35); --ai-bubble:rgba(74,217,192,.07); --ai-line:rgba(74,217,192,.32); --ai-name:#4ad9c0; --user-name:#34c77b; color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0}
-body{background:var(--bg);color:var(--fg);font:16px/1.72 var(--f-body);-webkit-font-smoothing:antialiased}
+/* Nothing may widen the page sideways (Safari keeps a zoomed-out scale after a single wide frame); clip keeps sticky working, unlike hidden. */
+html{overflow-x:hidden}
+@supports (overflow:clip){html,body{overflow-x:clip}}
+/* While a dialog or the item drawer is open, the page underneath does not scroll. */
+html:has(dialog[open]),html:has(.rail.open){overflow:hidden}
+.vbody,.cside-list,.cside-full,.rail,dialog{overscroll-behavior:contain}
+body{background:var(--bg);color:var(--fg);font:15.5px/1.65 var(--f-body);font-feature-settings:"cv11","ss01";-webkit-font-smoothing:antialiased}
+h1,h2,h3{letter-spacing:-.01em}
 a{color:var(--accent)}
 button{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+:focus-visible{outline:none;box-shadow:var(--ring);border-radius:8px}
 code{font:.86em var(--f-mono);background:var(--sunk);padding:1px 5px;border-radius:4px}
 pre{background:var(--sunk);padding:12px 14px;border-radius:8px;overflow-x:auto;margin:12px 0}
 pre code,pre code.hljs{background:transparent;padding:0;font-size:.84em}
@@ -58,10 +73,9 @@ blockquote{margin:10px 0;padding:2px 14px;border-left:2px solid var(--line-stron
 .md{overflow-wrap:break-word}
 
 /* shell */
-.shell{display:grid;grid-template-columns:280px minmax(0,1fr);gap:56px;padding-inline:32px;padding-block:40px 140px}
+/* Centred and capped: the reading column stays around 1050px on wide screens. */
+.shell{position:relative;display:grid;grid-template-columns:var(--rail-w,320px) minmax(0,1fr);gap:56px;padding-inline:32px;padding-block:40px 140px;max-width:1440px;margin-inline:auto}
 @media (max-width:700px){
-  details.item>summary{grid-template-columns:14px 3em minmax(0,1fr)}
-  .state{grid-column:3 / -1;flex-wrap:wrap;white-space:normal}
   .progress{gap:2px 14px;line-height:1.5}
   .progress .bar{flex-basis:100%;order:-1}
 }
@@ -85,29 +99,34 @@ blockquote{margin:10px 0;padding:2px 14px;border-left:2px solid var(--line-stron
 .mark.s-needs-you::before{content:"●";color:var(--wait)}
 .mark.s-in-progress::before{content:"●";color:var(--work)}
 .mark.s-sent::before{content:"●";color:var(--sent)}
+.mark.s-added::before{content:"●";color:var(--added)}
 .mark.s-closed::before{content:"✓";color:var(--done)}
 @media (max-width:960px){
-  .rail{position:fixed;inset:0 auto 0 0;width:min(320px,86vw);max-height:none;z-index:20;background:var(--surface);border-right:1px solid var(--line);padding:20px 12px calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-105%);transition:transform .2s}
+  .rail{position:fixed;inset:0 auto 0 0;width:min(320px,86vw);height:100vh;height:100dvh;max-height:none;overflow-y:auto;z-index:20;background:var(--surface);border-right:1px solid var(--line);padding:20px 12px calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-105%);transition:transform .2s}
   .rail.open{transform:none;box-shadow:0 0 0 100vmax rgba(0,0,0,.25)}
 }
 
 /* header */
-header.top{margin-bottom:36px;padding-bottom:28px;border-bottom:1px solid var(--line)}
-.eyebrow{font-size:.8rem;color:var(--muted);margin:0 0 6px}
-header.top h1{font-size:1.65rem;line-height:1.2;font-weight:600;margin:0 0 6px;text-wrap:balance}
+header.top{margin-bottom:36px;padding-bottom:28px;border-bottom:1px solid var(--line);position:relative}
+header.top::after{content:"";position:absolute;left:0;bottom:-1px;width:120px;height:2px;border-radius:2px;background:var(--accent-gradient)}
+.eyebrow{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
+header.top h1{font-size:1.7rem;line-height:1.2;font-weight:650;margin:0 0 6px;text-wrap:balance}
 .sub-t{color:var(--muted);margin:0 0 20px}
 .progress{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-size:.88rem;color:var(--muted)}
 .bar{flex:0 1 220px;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
-.bar i{display:block;height:100%;background:var(--done);border-radius:3px}
+.bar i{display:block;height:100%;background:var(--accent-gradient);border-radius:3px}
 .progress b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:22px}
 .seg{display:inline-flex;background:var(--sunk);border-radius:8px;padding:3px}
 .seg button{border:0;background:transparent;padding:4px 12px;border-radius:6px;cursor:pointer;font-size:.88rem;color:var(--muted)}
+.seg .fc{font-variant-numeric:tabular-nums;opacity:.7}
+.seg button{white-space:nowrap}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
-.search{flex:1 1 220px;min-width:0;max-width:420px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 12px;font:inherit;font-size:.9rem;color:var(--fg)}
-.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 11px;cursor:pointer;font-size:.88rem;color:var(--muted);white-space:nowrap}
+.search{flex:1 1 220px;min-width:0;max-width:420px;border:1px solid var(--line-strong);background:var(--bg);border-radius:10px;padding:6px 12px;font:inherit;font-size:.9rem;color:var(--fg)}
+.icon-btn{border:1px solid var(--line-strong);background:var(--sunk);border-radius:10px;padding:5px 12px;font-weight:500;cursor:pointer;font-size:.88rem;color:var(--muted);white-space:nowrap}
 .icon-btn:hover{color:var(--fg);border-color:var(--line-strong)}
 .navbtn{display:none}
+.toolbar .searchbtn{display:none}
 @media (max-width:960px){.navbtn{display:inline-block}}
 .spacer{flex:1}
 
@@ -119,101 +138,399 @@ details.ctx[open]>summary{margin-bottom:10px}
 /* groups & items */
 section.group{margin:56px 0 0;padding-top:32px;border-top:1px solid var(--line)}
 section.group:first-child{border-top:0;padding-top:0;margin-top:32px}
-section.group>h2{font-size:1.15rem;font-weight:600;margin:0 0 6px;display:flex;gap:10px;align-items:baseline}
+section.group>h2{font-size:1.15rem;font-weight:650;margin:0 0 6px;display:flex;gap:10px;align-items:baseline}
 section.group>h2 .gid{font:500 .9rem var(--f-mono);color:var(--muted)}
 section.group>h2 .gcount{margin-left:auto;font-size:.8rem;font-weight:400;color:var(--faint);font-variant-numeric:tabular-nums}
 .gintro{color:var(--muted);margin:6px 0 4px;font-size:.94rem}
 .items{display:flex;flex-direction:column;gap:12px;margin-top:20px}
 
-details.item,#general{scroll-margin-top:clamp(56px,14vh,140px)}
+details.item{scroll-margin-top:clamp(56px,14vh,140px)}
 details.item{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);transition:border-color .15s}
 details.item[open]{border-color:var(--line-strong)}
-details.item>summary{list-style:none;cursor:pointer;padding:16px 22px;display:grid;grid-template-columns:14px 3.4em minmax(0,1fr) auto;gap:4px 10px;align-items:baseline;border-radius:var(--r)}
+/* The coloured left border carries the status, so the card needs no dot. */
+details.item>summary>.mark{display:none}
+details.item>summary{list-style:none;cursor:pointer;padding:14px 22px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;border-radius:var(--r)}
+details.item[open]>summary{padding-block:12px}
+details.item[open]>summary .ttl{font-weight:650;font-size:1.02rem}
+@media (max-width:700px){details.item>summary,details.item[open]>summary{padding:10px 14px}}
 details.item>summary:hover{background:var(--sunk)}
 details.item>summary::-webkit-details-marker{display:none}
-.iid{font:500 .84rem var(--f-mono);color:var(--muted)}
-.ttl{font-weight:500;min-width:0}
+.iid{font:600 .76rem var(--f-mono);color:var(--muted);background:var(--sunk);border:1px solid var(--line);border-radius:7px;padding:1px 7px;min-width:2.8em;text-align:center}
+.ttl{font-weight:550;min-width:0;letter-spacing:-.005em}
 details.item.s-closed .ttl{color:var(--muted)}
 .state{font-size:.8rem;color:var(--faint);white-space:nowrap;display:flex;gap:8px;align-items:baseline}
 .state .n{color:var(--accent);font-weight:500}
-.state .w{color:var(--wait)} .state .y{color:var(--sent)} .state .p{color:var(--work)} .state .d{color:var(--done)}
-.preview{grid-column:3 / -1;font-size:.88rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.state .w,.state .y,.state .a,.state .p,.state .d{--c:currentColor;color:var(--c);background:color-mix(in srgb,var(--c) 13%,transparent);padding:1px 8px;border-radius:999px;font-weight:600}
+.state .w{--c:var(--wait)} .state .y{--c:var(--sent)} .state .a{--c:var(--added)} .state .p{--c:var(--work)} .state .d{--c:var(--done);font-weight:500}
+/* A status stripe on the card edge, so states differ at a glance, not only by a small dot. */
+details.item{border-left-width:4px}
+details.item.v-needs-you{border-left-color:var(--wait)} details.item.v-sent{border-left-color:var(--sent)} details.item.v-added{border-left-color:var(--added)}
+details.item.v-in-progress{border-left-color:var(--work)} details.item.v-closed{border-left-color:color-mix(in srgb,var(--done) 45%,var(--line))}
+.preview{grid-column:2 / -1;font-size:.88rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 details.item[open] .preview{display:none}
 .tag{font-size:.74rem;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:0 7px}
 
-.ibody{margin:0 22px;padding:22px 0 26px;border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr);gap:28px}
-@media (min-width:1300px){.ibody{grid-template-columns:minmax(0,1fr) minmax(300px,360px);gap:48px}}
-@media (min-width:1300px){.ibody.wide{grid-template-columns:minmax(0,1fr)}.ibody.wide .col-answer{position:static}}
+/* Chat-like: the description and the chat take the full card width, the answer box sits under them like a composer. */
+.ibody{margin:0 22px;padding:20px 0 26px;display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
 .col-text{min-width:0}
 .resolution{font-size:.94rem;margin:0 0 18px;padding:8px 12px;border-radius:8px;background:var(--accent-soft)}
 .resolution b{font-weight:600}
 .action{font-size:.88rem;color:var(--work);margin:0 0 12px}
 details.more{margin:22px 0 0}
+.tolast{margin-top:16px}
+.more-inline{margin:18px 0 0;padding:10px 14px;border:1px dashed var(--line-strong);border-radius:12px;font-size:.94rem;color:var(--muted)}
+.more-inline .ml{display:block;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
 details.more>summary{cursor:pointer;color:var(--accent);font-size:.9rem;list-style:none}
 details.more>summary::before{content:"＋ "}
 details.more[open]>summary::before{content:"− "}
 details.more>.md{margin-top:14px;padding-top:16px;border-top:1px dashed var(--line)}
 
-.thread{margin:28px 0 0;padding-top:22px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:18px}
-.msg{padding-left:14px;border-left:2px solid var(--line)}
-.msg .who{font-size:.76rem;color:var(--faint);margin-bottom:2px}
+/* The item's history reads as a chat: the reader on the right in green, the AI on the left in teal. */
+.thread{margin:28px 0 0;padding-top:20px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:10px}
+.msg{align-self:flex-start;max-width:min(94%,960px);min-width:0;padding:8px 14px 10px;border:1px solid var(--ai-line);border-radius:17px 17px 17px 5px;background:var(--ai-bubble)}
+.msg.user{align-self:flex-end;border-color:var(--user-line);border-radius:17px 17px 5px 17px;background:var(--user-bubble)}
+.msg .who{font-size:.8rem;color:var(--faint);margin:-2px -4px 6px 0;min-height:30px}
 .msg .who b{font-weight:600}
-.msg.user .who b{color:var(--wait)} .msg.ai .who b{color:var(--work)}
-.msg.pending{border-left-style:dashed}
-.older{border:0;background:none;padding:0;color:var(--muted);font-size:.84rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px;align-self:flex-start}
-.msg.q{border-left-style:dotted}
-.msg.q>summary{cursor:pointer;list-style:none;font-size:.76rem;color:var(--faint)}
+.msg.ai .who b{color:var(--ai-name)} .msg.user .who b{color:var(--user-name)}
+.msg.pending{border-style:dashed;opacity:.85}
+.msg.ask{border-color:var(--accent);box-shadow:var(--ring)}
+.msg .asktag{display:inline-block;margin-left:6px;padding:0 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:.7rem}
+.older{border:0;background:none;padding:0;color:var(--muted);font-size:.82rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px;align-self:center}
+/* System lines: status changes and earlier versions of the description sit centred, outside the bubbles. */
+.msg.ev,.msg.q{align-self:center;max-width:90%;border:0;background:none;box-shadow:none;padding:2px 0;text-align:center;font-size:.8rem;color:var(--faint)}
+.msg.ev .who{display:inline;margin:0}
+.msg.q>summary{cursor:pointer;list-style:none}
 .msg.q>summary::-webkit-details-marker{display:none}
-.msg.q>summary::before{content:'▸ ';color:var(--faint)}
+.msg.q>summary::before{content:'▸ '}
 .msg.q[open]>summary::before{content:'▾ '}
-.msg.q>.md{color:var(--muted);margin-top:4px}
+.msg .md{font-size:.95rem}
+.msg .md h1,.msg .md h2,.msg .md h3,.viewer .md h1,.viewer .md h2,.viewer .md h3{font-weight:650;letter-spacing:-.01em;line-height:1.3;margin:1.1em 0 .5em}
+.msg .md h1,.msg .md h2{font-size:1.08rem} .msg .md h3{font-size:1rem}
+.msg .md table{font-size:.86em}
+.msg .md pre{background:color-mix(in srgb,var(--bg) 70%,transparent)}
+/* A long message is clamped in the chat; the full version opens in the viewer. */
+.msg.long>.md{max-height:340px;overflow:hidden;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
+.msg .who{display:flex;align-items:center;gap:0 8px;flex-wrap:wrap}
+.msg .who b{font-size:.86rem}
+.msg .who .ibtn{margin-left:auto}
+.msg:not(.big) .vbtn{display:none}
+.msg .more-btn{display:none;margin-top:6px;border:0;background:none;padding:0;color:var(--accent);font-size:.84rem;font-weight:500;cursor:pointer}
+.msg.long .more-btn,.msg.expanded .more-btn{display:inline-block}
+.body-head{display:flex;justify-content:flex-end;align-items:center;gap:6px;margin:-4px 0 6px}
+.body-head .iacts{display:flex;gap:6px;padding-right:6px;margin-right:2px;border-right:1px solid var(--line)}
+/* GitHub-style callouts: > [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION]. */
+.callout{margin:12px 0;padding:10px 14px;border:1px solid var(--c-line);border-left:3px solid var(--c);border-radius:10px;background:var(--c-soft)}
+.callout>.ct{display:block;font-size:.74rem;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--c);margin-bottom:4px}
+.callout>:last-child{margin-bottom:0}
+.callout.note{--c:var(--accent)} .callout.tip{--c:var(--done)} .callout.important{--c:var(--sent)} .callout.warning{--c:var(--wait)} .callout.caution{--c:var(--err)}
+.callout{--c-line:color-mix(in srgb,var(--c) 30%,transparent);--c-soft:color-mix(in srgb,var(--c) 8%,transparent)}
+/* Full-screen viewer for a message or an item description. */
+dialog.viewer{width:min(1320px,calc(100vw - 32px));max-height:calc(100vh - 48px);padding:0;border:1px solid var(--line-strong);border-radius:18px;background:var(--surface);color:var(--fg);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+dialog.qrbox{width:min(420px,calc(100vw - 32px))}
+dialog.qrbox .vbody{display:flex;flex-direction:column;align-items:center;gap:14px;padding:22px}
+.qr{background:#fff;padding:14px;border-radius:14px;line-height:0}
+.qr svg{width:min(300px,70vw);height:auto;display:block}
+.qrurl{font:500 .78rem var(--f-mono);color:var(--muted);word-break:break-all;text-align:center}
+dialog.composer .vbody{display:flex;flex-direction:column;gap:12px}
+/* Desktop: the item's chat in a side panel next to the big answer box; a message opens over the whole panel. */
+dialog.composer{width:min(1320px,calc(100vw - 32px))}
+@media (min-width:961px){
+  dialog.composer[open]{height:min(880px,calc(100vh - 48px));display:flex;flex-direction:column}
+  dialog.composer .cgrid{flex:1;min-height:0}
+  dialog.composer .cside{max-height:none;min-height:0}
+  dialog.composer .cmain{max-height:none;min-height:0;overflow:hidden}
+  dialog.composer #ctext{flex:1;min-height:0;resize:none}
+}
+.cmain .chips{flex:0 0 auto;align-items:flex-start}
+.cgrid{display:grid;grid-template-columns:var(--side-w,360px) minmax(0,1fr);min-height:0}
+dialog.composer.noside .cgrid{grid-template-columns:minmax(0,1fr)}
+dialog.composer.noside .cside{display:none}
+.side-grip{position:absolute;top:0;bottom:0;right:-6px;width:12px;cursor:col-resize;z-index:2}
+.side-grip::after{content:"";position:absolute;top:0;bottom:0;left:5px;width:2px;background:transparent;transition:background .15s}
+.side-grip:hover::after,.side-grip.drag::after{background:var(--accent)}
+.cside{position:relative;border-right:1px solid var(--line);background:var(--sunk);display:flex;flex-direction:column;max-height:calc(100vh - 110px);min-height:0}
+.cside-head{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:.86rem}
+.cside-head b{font-weight:650}
+.cside-list{overflow:auto;padding:10px;display:flex;flex-direction:column;gap:8px;flex:1}
+.cmsg{display:block;width:100%;text-align:left;cursor:pointer;border:1px solid var(--ai-line);background:var(--ai-bubble);border-radius:12px 12px 12px 4px;padding:7px 10px;color:var(--fg);font:inherit}
+.cmsg.user{border-color:var(--user-line);background:var(--user-bubble);border-radius:12px 12px 4px 12px;margin-left:24px;width:calc(100% - 24px)}
+.cmsg.desc{border-style:dashed;border-color:var(--line-strong);background:var(--surface)}
+.cmsg.ask{border-color:var(--accent)}
+.cmsg:hover{border-color:var(--accent)}
+.cmsg .cw{display:block;font-size:.72rem;color:var(--faint);margin-bottom:2px}
+.cmsg .cw b{color:var(--muted)}
+.cmsg .ct{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:.84rem;line-height:1.45}
+.cmsg.ev{border:0;background:none;text-align:center;font-size:.74rem;color:var(--faint);padding:2px;cursor:default}
+.cside-full{overflow:auto;padding:14px 18px 22px;flex:1;font-size:.95rem;line-height:1.65}
+.csidebtn{margin-right:4px}
+@media (max-width:960px){.cgrid{grid-template-columns:minmax(0,1fr)}.cside,.csidebtn{display:none!important}}
+dialog.composer .chips{-webkit-mask-image:none;mask-image:none;flex-wrap:wrap;overflow:visible}
+#ctext{width:100%;min-height:52vh;resize:vertical;border:1px solid var(--line-strong);background:var(--bg);color:var(--fg);border-radius:12px;padding:12px 14px;font:inherit;font-size:1rem;line-height:1.55}
+#ctext:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring)}
+dialog.viewer::backdrop{background:rgba(5,6,8,.62);backdrop-filter:blur(6px)}
+.viewer .vhead{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:10px;padding:14px 22px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(12px)}
+.viewer .vhead::after{content:"";position:absolute;left:22px;bottom:-1px;width:80px;height:2px;border-radius:2px;background:var(--accent-gradient)}
+.viewer .vwho{font-size:.82rem;color:var(--muted)} .viewer .vwho b{color:var(--fg);font-weight:600}
+/* Dialog title: the item's ID and name stand out; who and when follow in small grey. */
+.viewer .vwho.hd{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.vwho .hid{flex:none;font:600 .8rem var(--f-mono);color:var(--muted);background:var(--sunk);border:1px solid var(--line);border-radius:7px;padding:1px 8px}
+.vwho .htt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:1.08rem;font-weight:650;color:var(--fg);letter-spacing:-.01em}
+.vwho .hmeta{flex:none;font-size:.8rem;color:var(--muted);white-space:nowrap}
+@media (max-width:700px){.vwho .htt{font-size:1rem;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}.vwho .hmeta{display:none}}
+.viewer .vclose{margin-left:auto}
+.viewer .vbody{padding:22px 28px 30px;overflow:auto;max-height:calc(100vh - 110px)}
+.viewer .md{font-size:1.12rem;line-height:1.78;letter-spacing:.003em}
+/* Desktop viewer: the item's chat on the left, the chosen message across the rest of the dialog. */
+.vgrid{display:grid;grid-template-columns:var(--side-w,340px) minmax(0,1fr);min-height:0}
+#viewer.noside .vgrid{grid-template-columns:minmax(0,1fr)}
+#viewer.noside #vside{display:none}
+@media (min-width:961px){
+  #viewer[open]{height:min(880px,calc(100vh - 48px));display:flex;flex-direction:column}
+  #viewer .vgrid{flex:1;min-height:0}
+  #viewer #vside{max-height:none}
+  #viewer .vbody{max-height:none;min-height:0}
+  #viewer .vgrid{min-height:0}
+}
+.cmsg.cur{border-color:var(--accent);box-shadow:var(--ring)}
+/* Message mode: the message scrolls, a compact answer box stays under it. */
+.vmain{display:flex;flex-direction:column;min-height:0;min-width:0}
+.vmain .vbody{flex:1}
+.vcomp{flex:none;display:flex;flex-direction:column;gap:8px;padding:10px 28px 14px;border-top:1px solid var(--line);background:var(--surface)}
+.vcomp .chips{flex-wrap:wrap;max-height:58px;overflow:hidden;-webkit-mask-image:none;mask-image:none}
+.vcomp .cbox{display:flex;align-items:flex-end;border-radius:22px}
+.vcomp textarea{flex:1;min-height:0;height:44px;max-height:30vh;resize:none;border:0;background:transparent;color:var(--fg);padding:11px 4px 9px 15px;font:inherit;font-size:.98rem;line-height:1.45;outline:none}
+.vcomp .cbar{padding:0 5px 5px 0;gap:2px}
+.vcomp .cbar .grow{border:0;background:none;width:34px;height:34px}
+.vcomp .send{width:34px;height:34px}
+#cmsgview,#vmodebtn{margin-left:auto}
+#cmsgview + .maxbtn,#vmodebtn + .maxbtn{margin-left:0}
+@media (max-width:960px){#viewer[open]{display:flex;flex-direction:column}#viewer .vgrid{flex:1;min-height:0}#viewer .vmain{min-height:0}#viewer .vbody{max-height:none;min-height:0}}
+@media (max-width:700px){.vcomp{padding:8px 12px calc(10px + env(safe-area-inset-bottom,0px))}.vcomp textarea{font-size:16px}.vcomp .chips{flex-wrap:nowrap;overflow-x:auto;max-height:none}}
+.maxbtn{margin-left:auto}
+/* Full-screen mode for the viewer and the big answer box (desktop). */
+@media (min-width:961px){
+  #viewer.max[open],#composer.max[open]{height:100vh}
+  dialog.viewer.max[open]{width:100vw;max-width:100vw;height:100vh;max-height:100vh;margin:0;border-radius:0;border:0}
+  dialog.viewer.max .vhead::after{left:22px}
+}
+@media (max-width:960px){.vhead .maxbtn{display:none}.vhead .ibtn:last-child{margin-left:auto}#vmodebtn ~ .ibtn:last-child,#cmsgview ~ .ibtn:last-child{margin-left:0}}
+@media (max-width:960px){.vgrid{grid-template-columns:minmax(0,1fr)}#vside,#vsidebtn{display:none!important}}
+.viewer .md p,.viewer .md li{margin-bottom:.7em}
+.viewer .md table{font-size:.92em}
+.viewer .md table{display:table;width:100%}
+@media (max-width:700px){.viewer .md{font-size:1.06rem;line-height:1.72}}
+@media (max-width:700px){dialog.viewer{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0;margin:0}.viewer .vbody{padding:18px 16px 28px;max-height:calc(100dvh - 60px)}}
+.msg.q>.md{text-align:left;color:var(--muted);margin-top:8px;padding:10px 14px;border:1px dashed var(--line-strong);border-radius:12px;font-size:.9rem}
 .tag.new{color:var(--accent);border-color:var(--accent)}
+/* Sub-items sit in the same flat list right after their parent: one indent for any depth. */
 details.item.child{margin-left:28px;position:relative}
 details.item.child::before{content:'';position:absolute;left:-16px;top:-10px;bottom:50%;width:10px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);border-bottom-left-radius:6px}
 .parent-ref{font-size:.74rem;color:var(--faint);margin-right:6px;white-space:nowrap}
 @media (max-width:700px){details.item.child{margin-left:14px}details.item.child::before{left:-10px;width:6px}}
 
 .col-answer{min-width:0}
-@media (min-width:1300px){.col-answer{position:sticky;top:20px;align-self:start}}
-.answer{display:flex;flex-direction:column;gap:12px}
+/* The composer and the item's controls stick to the bottom of the screen while the open item is in view. */
+details.item[open] .col-answer{position:sticky;bottom:var(--vvb,0px);z-index:5;margin:6px -22px -26px;padding:16px 22px 12px;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line);border-radius:0 0 var(--r) var(--r);box-shadow:0 -12px 24px -14px rgba(0,0,0,.45)}
+@media (max-width:960px){details.item[open] .col-answer{margin:0 -16px -26px;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px))}}
+.answer{display:flex;flex-direction:column;gap:10px}
 .answer label{font-size:.8rem;color:var(--muted)}
-.answer textarea{width:100%;min-height:96px;resize:vertical;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:9px 11px;font:inherit;font-size:.94rem;line-height:1.5}
-.answer textarea:focus{border-color:var(--accent);outline:none;background:var(--surface)}
-.quick{display:flex;flex-wrap:wrap;gap:4px 12px}
-.quick button{border:0;background:none;padding:0;color:var(--muted);font-size:.84rem;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px}
-.quick button:hover{color:var(--fg)}
+.answer textarea{width:100%;min-height:96px;resize:vertical;border:1px solid var(--line-strong);background:var(--bg);color:var(--fg);border-radius:12px;padding:8px 11px;font:inherit;font-size:.94rem;line-height:1.45}
+.answer textarea:focus{border-color:var(--accent);outline:none;box-shadow:var(--ring)}
+.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}
+.ibtn{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid var(--line-strong);border-radius:10px;background:var(--sunk);color:var(--muted);cursor:pointer;padding:0;transition:color .12s,border-color .12s,background .12s}
+.ibtn:hover,.ibtn:focus-visible{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.ibtn.danger:hover{color:var(--err);border-color:var(--err);background:color-mix(in srgb,var(--err) 10%,transparent)}
+.ibtn.ok:hover{color:var(--done);border-color:var(--done);background:color-mix(in srgb,var(--done) 10%,transparent)}
+.ibtn.sm{width:30px;height:30px;border-radius:999px}
+.ibtn.sm .ico{width:15px;height:15px}
+.ibtn .cnt{font-size:.72rem;font-weight:600;margin-left:3px}
+.ibtn.wide{width:auto;padding:0 10px;display:inline-flex;gap:2px}
+/* Answer chips look like the reader's own chat bubbles; the AI's suggestions come first with a spark. */
+.crow1{display:flex;align-items:center;gap:8px;min-height:30px}
+.chips{display:flex;flex-wrap:nowrap;gap:6px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+.chips::-webkit-scrollbar{display:none}
+/* Wide screens: chips wrap onto at most two rows instead of scrolling sideways. */
+@media (min-width:701px){
+  .col-answer .chips{flex-wrap:wrap;overflow:hidden;max-height:58px;-webkit-mask-image:none;mask-image:none;padding-bottom:0}
+  .col-answer .chip{max-width:100%;overflow:hidden;text-overflow:ellipsis;line-height:1.45}
+}
+.chip{flex:none;white-space:nowrap;border:1px solid var(--user-line);background:var(--user-bubble);color:var(--fg);border-radius:12px 12px 4px 12px;padding:2px 10px;font-size:.8rem;cursor:pointer;text-align:left;max-width:100%}
+.chip:hover{border-color:var(--user-name)}
+.chip.ai{border-color:var(--ai-line);background:var(--ai-bubble)}
+.chip.ai::before{content:"✦ ";color:var(--ai-name)}
+.iacts{display:flex;gap:6px;flex:none}
+/* The composer: one framed box with the text on top and its buttons inside, like a chat app. */
+.cbox{border:1px solid var(--line-strong);border-radius:16px;background:var(--bg);transition:border-color .12s,box-shadow .12s}
+.cbox:focus-within{border-color:var(--accent);box-shadow:var(--ring)}
+.cbox textarea{display:block;width:100%;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:16px 16px 0 0;padding:11px 14px 4px;resize:none;outline:none}
+.cbar{display:flex;align-items:center;gap:6px;padding:4px 6px 6px 14px}
+.cbar .hint{margin-right:auto;font-size:.74rem;color:var(--faint)}
+.col-answer .ibtn{width:30px;height:30px;border-radius:9px}
+.col-answer .ibtn .ico{width:16px;height:16px}
+.send{width:34px;height:34px;border-radius:999px;border:0;background:var(--gradient);color:var(--accent-ink);box-shadow:var(--shadow-cta);display:grid;place-items:center;cursor:pointer;flex:none;transition:transform .08s}
+.send:active{transform:scale(.94)}
+.send .ico{width:17px;height:17px}
+.cbar .grow{border:0;background:none;width:32px;height:32px}
 .arow{display:flex;align-items:center;gap:10px}
 .arow .hint{font-size:.78rem;color:var(--faint);margin-right:auto}
-.btn{border:0;background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:7px 16px;font-weight:600;font-size:.9rem;cursor:pointer}
+.btn{border:0;background:var(--gradient);color:var(--accent-ink);border-radius:10px;padding:8px 18px;font-weight:600;font-size:.9rem;cursor:pointer;box-shadow:var(--shadow-cta);transition:transform .08s}
+.btn:active{transform:scale(.97)}
+.btn-ghost{border:0;background:none;color:var(--muted);padding:8px 10px;border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:500}
+.btn-ghost:hover{color:var(--fg);background:var(--sunk)}
 .btn:disabled{opacity:.45;cursor:default}
 .closed-note{font-size:.8rem;color:var(--done);margin:0 0 8px}
+.closed-row{display:flex;align-items:center;gap:10px}
+.closed-row .iacts{margin-left:auto}
 .reopen{border:0;background:none;padding:0;color:var(--muted);font-size:.86rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.msg .who a{color:inherit}
+a.iref{font:500 .92em var(--f-mono);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px}
+@keyframes dq-item-flash{from{box-shadow:0 0 0 3px var(--accent)}to{box-shadow:0 0 0 3px transparent}}
+details.item.flash-item{animation:dq-item-flash 1.6s ease-out}
+/* Adding: a dashed block in the shape of an item card turns into a form card in place. */
+.addblock{display:flex;align-items:center;gap:10px;width:100%;border:1px dashed var(--line-strong);background:transparent;border-radius:var(--r);padding:14px 22px;color:var(--muted);cursor:pointer;font-size:.92rem;font-weight:500;text-align:left;transition:border-color .15s,color .15s,background .15s}
+.addblock:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.addblock .plus{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;border:1px solid currentColor;font-size:1rem;line-height:1}
+.addblock.sub{margin-left:28px;width:calc(100% - 28px);padding:10px 18px;font-size:.86rem}
+.item-form{border:1px solid var(--accent);box-shadow:var(--ring);background:var(--surface);border-radius:var(--r);padding:16px 22px;display:flex;flex-direction:column;gap:10px}
+.item-form.child{margin-left:28px}
+.item-form .ftag{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.item-form textarea{width:100%;border:1px solid var(--line-strong);background:var(--bg);color:var(--fg);border-radius:12px;padding:9px 12px;font:inherit;font-size:.95rem}
+.item-form textarea{min-height:84px;resize:vertical;line-height:1.5}
+.item-form textarea:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring)}
+.item-form .arow .hint{margin-right:auto}
+section.group.phantom{opacity:.72;transition:opacity .15s}
+section.group.phantom:hover,section.group.phantom:focus-within{opacity:1}
+section.group.phantom>h2{gap:12px}
+section.group.phantom>h2 .gid{border:1px dashed var(--line-strong);border-radius:6px;padding:0 6px}
+section.group.pseudo>h2 .gid{color:var(--added)}
 
-section.general{margin-top:40px}
-section.general h2{font-size:1.08rem;font-weight:600;margin:0 0 10px}
-section.general .answer{max-width:720px}
 
 /* draft pill */
-.pill-bar{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:12px;align-items:center;background:var(--fg);color:var(--bg);border-radius:999px;padding:8px 8px 8px 18px;box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:.9rem;z-index:15;max-width:calc(100vw - 32px)}
+.pill-bar{white-space:nowrap;position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;gap:12px;align-items:center;background:var(--fg);color:var(--bg);border-radius:999px;padding:8px 8px 8px 18px;box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:.9rem;z-index:15;max-width:calc(100vw - 32px)}
 .pill-bar .btn{background:var(--bg);color:var(--fg);border-radius:999px}
 .pill-bar[hidden]{display:none}
-.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--surface);color:var(--fg);border:1px solid var(--line);padding:8px 14px;border-radius:8px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:16}
+.toast{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--surface);color:var(--fg);border:1px solid var(--line);padding:8px 14px;border-radius:8px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:16}
 .toast.on{opacity:1}
+/* A bar that slides in from the top while the reader scrolls up, and hides again on the way down. */
+.upbar{position:fixed;inset:0 0 auto 0;z-index:14;transform:translateY(-105%);transition:transform .22s ease;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(12px) saturate(1.2);border-bottom:1px solid var(--line);box-shadow:0 10px 24px -18px rgba(0,0,0,.5);padding-top:env(safe-area-inset-top,0px)}
+.upbar.on{transform:none}
+.upbar .upin{max-width:1440px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:8px 32px}
+.upttl{flex:1;min-width:0;font-weight:650;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upnav{display:none;gap:6px;width:auto;padding:0 10px}
+.upnav .nb{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--wait);color:#fff;font-size:.7rem;font-weight:600;display:inline-grid;place-items:center}
+@media (max-width:960px){.upbar .upin{padding:8px 12px}.upnav{display:inline-flex}.upseg{display:none}}
+@media (prefers-reduced-motion:reduce){.upbar{transition:none}}
 .mermaid{overflow-x:auto;margin:12px 0}
 .hidden-by-filter{display:none!important}
 @keyframes dq-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(1.6)}}
 .mark.fresh::before{display:inline-block;animation:dq-pulse 1.6s ease-in-out infinite}
 @keyframes dq-flash{from{background:var(--accent-soft)}to{background:transparent}}
-.msg.flash{animation:dq-flash 3s ease-out;border-radius:0 6px 6px 0}
+.msg.flash{animation:dq-flash 3s ease-out}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}.mark.fresh::before,.msg.flash{animation:none}}
+/* The open item's header sticks to the top on every screen; it slides under the scroll-up bar when that bar shows. */
+details.item[open]>summary{position:sticky;top:max(var(--stick,0px),env(safe-area-inset-top,0px));z-index:6;transition:top .22s ease;border-radius:var(--r) var(--r) 0 0;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(12px) saturate(1.2);border-bottom:1px solid var(--line);box-shadow:0 10px 22px -16px rgba(0,0,0,.5)}
+details.item[open]>summary .ttl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* ---------- phones: compact chrome, readable items, thumb-friendly controls */
+.rail-head,.rail-backdrop{display:none}
+/* Desktop: drag the rail's edge to resize it; the width is kept in this browser. */
+.rail-grip{position:absolute;top:0;bottom:0;left:calc(32px + var(--rail-w,320px) + 22px);width:12px;cursor:col-resize;z-index:3}
+.rail-grip::after{content:"";position:sticky;top:0;display:block;margin:0 auto;width:2px;height:100vh;border-radius:2px;background:transparent;transition:background .15s}
+.rail-grip:hover::after,.rail-grip.drag::after{background:var(--accent)}
+body.resizing{cursor:col-resize;user-select:none}
+@media (max-width:960px){.rail-grip{display:none}}
+@media (max-width:960px){
+  .rail-head{display:flex;align-items:center;justify-content:space-between;position:sticky;top:-20px;z-index:2;margin:-20px -12px 14px;padding:14px 12px 10px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+  .rail-head b{font-size:1rem;font-weight:650}
+  .rail.open + .rail-backdrop{display:block;position:fixed;inset:0;z-index:19;background:rgba(5,6,8,.5);backdrop-filter:blur(2px)}
+  .rail.open{box-shadow:none}
+  .rail a{padding:8px 8px}
+}
+@media (max-width:700px){
+  .shell{padding-block:18px 96px}
+  header.top{margin-bottom:22px;padding-bottom:16px}
+  header.top h1{font-size:1.32rem;margin-bottom:4px}
+  .sub-t{font-size:.9rem;margin-bottom:12px;line-height:1.45}
+  .eyebrow{margin-bottom:6px}
+  .progress{font-size:.8rem;gap:2px 12px}
+  .toolbar{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto auto;gap:8px;margin-top:14px}
+  .toolbar .searchbtn{display:inline-grid;grid-row:1;grid-column:3} #expand{grid-row:1;grid-column:4} #qrbtn{grid-row:1;grid-column:5} #theme{grid-row:1;grid-column:6}
+  .toolbar .searchbtn[aria-expanded="true"]{color:var(--accent);border-color:var(--accent)}
+  .toolbar .search{min-width:0;width:100%}
+  .toolbar .seg{grid-column:1 / -1;justify-self:stretch;overflow-x:auto;scrollbar-width:none;display:flex}
+  .toolbar .seg::-webkit-scrollbar{display:none}
+  .toolbar .seg button{flex:1 0 auto}
+  /* Search folds into an icon; opened, it spans the whole screen width. */
+  .toolbar .search{display:none;grid-row:2;grid-column:1 / -1;max-width:none;margin-inline:-14px;width:calc(100% + 28px);border-radius:0;border-inline:0;padding:11px 14px}
+  .toolbar.searching .search{display:block}
+  .toolbar .seg{grid-row:3}
+  .toolbar .navbtn{grid-row:1;grid-column:1}
+  .toolbar .spacer{display:none}
+  .search,.answer textarea,.item-form textarea,#ctext{font-size:16px}
+  section.group{margin-top:34px;padding-top:22px}
+  section.group:first-child{margin-top:20px}
+  section.group>h2{font-size:1.02rem;line-height:1.35}
+  section.group>h2 .gcount{white-space:nowrap;align-self:flex-start;margin-top:2px}
+  .items{gap:10px;margin-top:14px}
+  /* Summary as one text flow: the ID opens the title, the status closes it, the question follows. */
+  details.item>summary{display:block;padding:11px 14px;line-height:1.38}
+  details.item>summary .iid{display:inline-block;margin-right:7px;vertical-align:1px;font-size:.72rem;padding:0 6px;min-width:0}
+  details.item>summary .ttl,details.item[open]>summary .ttl{display:inline;font-size:.98rem;-webkit-line-clamp:unset}
+  details.item>summary .state{display:inline-flex;margin-left:7px;vertical-align:1px;flex-wrap:nowrap;white-space:nowrap;gap:6px;font-size:.74rem}
+  details.item>summary .state .tag:not(.new),details.item>summary .state .parent-ref{display:none}
+  details.item>summary .preview{display:-webkit-box;margin-top:5px;white-space:normal;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:.85rem}
+  details.item.child{margin-left:12px}
+  details.item.child::before{left:-9px;width:6px}
+  .ibody{margin:0 14px}
+  .body-head{margin:0 0 4px}
+  .body-head .ibtn{width:32px;height:32px}
+  .msg{max-width:100%;padding:8px 12px 9px}
+  .thread{gap:8px}
+  details.item[open] .col-answer{padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px))}
+  /* Two lines on phones: the buttons sit to the right of the text instead of under it. */
+  /* One line, Telegram-like: a rounded box about 1.5 lines tall that grows with the text. */
+  .cbox{display:flex;align-items:flex-end;border-radius:22px}
+  .cbox textarea{flex:1;min-height:0;height:42px;padding:10px 4px 9px 15px;line-height:1.4;border-radius:22px}
+  .cbar{padding:0 4px 4px 0;gap:0}
+  .cbar .grow{width:34px;height:34px}
+  .send{width:34px;height:34px}
+  .cbar .hint{display:none}
+  .cbar{justify-content:flex-end}
+  .chip{font-size:.82rem;padding:4px 11px}
+  dialog.composer .chips{flex-wrap:nowrap;overflow-x:auto}
+  dialog.composer .arow .hint{display:none}
+  dialog.composer .arow{justify-content:flex-end}
+  #ctext{min-height:38dvh}
+  .addblock{padding:12px 14px}
+  .item-form{padding:12px 14px}
+  .item-form .arow .hint{display:none}
+  .item-form .arow{justify-content:flex-end}
+  /* Edge to edge: cards touch the screen sides; loose text keeps a small inner gutter. */
+  .shell{padding-inline:0}
+  header.top,section.group>h2,.gintro,.note,#sentnote,section.group.phantom>h2{padding-inline:14px}
+  header.top::after{left:14px}
+  details.ctx{border-radius:0;border-inline:0}
+  .items{gap:6px}
+  details.item{border-radius:0;border-right:0}
+  details.item>summary{border-radius:0}
+  details.item.child{margin-left:0}
+  details.item.child::before{display:none}
+  details.item.child>summary{padding-left:30px}
+  .addblock,.item-form{border-radius:0;border-inline:0}
+  .addblock.sub{margin-left:0;width:100%}
+  details.item[open] .col-answer{border-radius:0}
+  section.group{border-top:0}
+  .pill-bar{top:calc(10px + env(safe-area-inset-top,0px))}
+}
 </style>
 </head>
 <body>
 <div class="shell">
   <nav class="rail" id="rail" aria-label="Items"></nav>
+  <div class="rail-backdrop" aria-hidden="true"></div>
+  <div class="rail-grip" id="railgrip" title="Drag to resize · double-click to reset" aria-hidden="true"></div>
   <main id="main">
     <header class="top">
-      <p class="eyebrow" id="eyebrow">Point-by-point discussion</p>
+      <p class="eyebrow" id="eyebrow">Discussion</p>
       <h1 id="title">Loading…</h1>
       <p class="sub-t" id="subtitle"></p>
       <div class="progress" id="progress"></div>
@@ -221,31 +538,71 @@ section.general .answer{max-width:720px}
         <button class="icon-btn navbtn" id="navbtn" type="button">☰ Items</button>
         <div class="seg" role="group" aria-label="Filter">
           <button type="button" data-filter="open" aria-pressed="true">Open</button>
+          <button type="button" data-filter="mine" aria-pressed="false">Need you<span class="fc" data-count="mine"></span></button>
+          <button type="button" data-filter="ai" aria-pressed="false">With AI<span class="fc" data-count="ai"></span></button>
           <button type="button" data-filter="all" aria-pressed="false">All</button>
           <button type="button" data-filter="closed" aria-pressed="false">Closed</button>
         </div>
         <input class="search" id="search" type="search" placeholder="Search" aria-label="Search items">
         <span class="spacer"></span>
-        <button class="icon-btn" id="expand" type="button">Expand all</button>
-        <button class="icon-btn" id="toGeneral" type="button">Comment</button>
-        <button class="icon-btn" id="theme" type="button" aria-label="Theme">◐ System</button>
+        <button class="ibtn searchbtn" id="searchbtn" type="button" title="Search" aria-label="Search" aria-expanded="false"></button>
+        <button class="ibtn" id="expand" type="button" title="Expand all" aria-label="Expand all"></button>
+                <button class="ibtn" id="qrbtn" type="button" title="QR code of this page" aria-label="QR code of this page"></button>
+        <button class="ibtn" id="theme" type="button" title="Theme" aria-label="Theme"></button>
       </div>
     </header>
-    <div class="note" id="sentnote" hidden>Answers sent. Tell the assistant in chat that you have replied; it will read them and prepare the next round.</div>
+    <div class="note" id="sentnote" hidden>Sent. The AI picks it up by itself if it is watching the page; otherwise tell it in the chat that you answered.</div>
     <details class="ctx" id="ctx" hidden><summary>Context</summary><div class="md" id="ctxbody"></div></details>
     <div id="groups"></div>
-    <section class="general" id="general">
-      <h2>Comment on the whole list</h2>
-      <div id="generalThread"></div>
-      <div class="answer">
-        <textarea id="ans-_general" data-item="_general" placeholder="New question or comment about the whole list"></textarea>
-        <div class="arow"><span class="hint">Ctrl+Enter to send</span><button class="btn" type="button" data-send="_general">Send</button></div>
-      </div>
-    </section>
   </main>
 </div>
-<div class="pill-bar" id="pill" hidden><span id="pilltext"></span><button class="btn" type="button" id="sendAll">Send</button></div>
+<div class="pill-bar" id="pill" hidden><span id="pilltext"></span><button class="btn" type="button" id="sendAll">Send all</button></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="upbar" id="upbar" aria-hidden="true"><div class="upin">
+  <button class="ibtn upnav" id="navfab" type="button" title="Items" aria-label="Items"></button>
+  <span class="upttl" id="upttl"></span>
+  <div class="seg upseg" role="group" aria-label="Filter">
+    <button type="button" data-filter="open" aria-pressed="true">Open</button>
+          <button type="button" data-filter="mine" aria-pressed="false">Need you<span class="fc" data-count="mine"></span></button>
+          <button type="button" data-filter="ai" aria-pressed="false">With AI<span class="fc" data-count="ai"></span></button>
+    <button type="button" data-filter="all" aria-pressed="false">All</button>
+    <button type="button" data-filter="closed" aria-pressed="false">Closed</button>
+  </div>
+  <button class="ibtn" id="totop" type="button" title="Back to the top" aria-label="Back to the top"></button>
+</div></div>
+<dialog class="viewer qrbox" id="qrbox" aria-labelledby="qrhead">
+  <div class="vhead"><span class="vwho" id="qrhead"><b>Open on another device</b></span><button class="ibtn vclose" type="button" id="qrclose" title="Close (Esc)" aria-label="Close"></button></div>
+  <div class="vbody"><div class="qr" id="qrimg"></div><div class="qrurl" id="qrurl"></div><button class="btn" type="button" id="qrcopy">Copy link</button></div>
+</dialog>
+<dialog class="viewer composer" id="composer" aria-labelledby="cwho">
+  <div class="vhead"><button class="ibtn csidebtn" type="button" id="csidebtn" title="Show or hide the chat" aria-label="Show or hide the chat"></button><span class="vwho hd" id="cwho"></span><button class="ibtn" type="button" id="cmsgview" title="Open the message across the panel" aria-label="Open the message across the panel"></button><button class="ibtn maxbtn" type="button" data-maxfor="composer" title="Full screen" aria-label="Full screen"></button><button class="ibtn" type="button" id="cclose" title="Collapse (Esc)" aria-label="Collapse"></button></div>
+  <div class="cgrid">
+    <aside class="cside" id="cside" aria-label="Chat of this item"><div class="side-grip" data-grip="composer" title="Drag to resize · double-click to reset"></div>
+      <div class="cside-head"><button class="btn-ghost" type="button" id="cback" hidden>← All messages</button><b id="cside-title">Chat</b></div>
+      <div class="cside-list" id="cslist"></div>
+      <div class="cside-full md" id="csfull" hidden></div>
+    </aside>
+    <div class="vbody cmain">
+      <div class="chips" id="cchips"></div>
+      <textarea id="ctext" aria-label="Your answer" placeholder="Your answer, a follow-up or a question"></textarea>
+      <div class="arow"><span class="hint">Ctrl+Enter to send · Esc to collapse, the draft is kept</span><button class="btn" type="button" id="csend">Send</button></div>
+    </div>
+  </div>
+</dialog>
+<dialog class="viewer" id="viewer" aria-labelledby="vwho">
+  <div class="vhead"><button class="ibtn csidebtn" type="button" id="vsidebtn" title="Show or hide the chat" aria-label="Show or hide the chat"></button><span class="vwho hd" id="vwho"></span><button class="ibtn" type="button" id="vmodebtn" title="Write an answer in the big box" aria-label="Write an answer in the big box"></button><button class="ibtn maxbtn" type="button" data-maxfor="viewer" title="Full screen" aria-label="Full screen"></button><button class="ibtn" type="button" id="vclose" title="Close (Esc)" aria-label="Close"></button></div>
+  <div class="vgrid">
+    <aside class="cside" id="vside" aria-label="Chat of this item"><div class="side-grip" data-grip="viewer" title="Drag to resize · double-click to reset"></div><div class="cside-head"><b>Chat</b></div><div class="cside-list" id="vslist"></div></aside>
+    <div class="vmain">
+      <div class="vbody"><div class="md" id="vmd"></div></div>
+      <div class="vcomp" id="vcomp">
+        <div class="chips" id="vchips"></div>
+        <div class="cbox"><textarea id="vtext" rows="1" aria-label="Your answer" placeholder="Reply…"></textarea>
+          <div class="cbar"><button class="ibtn grow" type="button" id="vexpand" title="Expand the answer box" aria-label="Expand the answer box"></button><button class="send" type="button" id="vsend" title="Send (Ctrl+Enter)" aria-label="Send"></button></div></div>
+      </div>
+    </div>
+  </div>
+</dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
@@ -253,15 +610,15 @@ section.general .answer{max-width:720px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
 <script>
 (() => {
-  const STATUS = { 'needs-you': 'awaiting you', 'sent': 'you replied', 'in-progress': 'AI is working', 'closed': 'resolved' };
-  const STATE_CLASS = { 'needs-you': 'w', 'sent': 'y', 'in-progress': 'p', 'closed': 'd' };
+  const STATUS = { 'needs-you': 'needs you', 'sent': 'you answered', 'added': 'you added — not read yet', 'in-progress': 'AI is on it', 'closed': 'settled' };
+  const STATE_CLASS = { 'needs-you': 'w', 'sent': 'y', 'added': 'a', 'in-progress': 'p', 'closed': 'd' };
   // An answer sent from the page but not yet read by the AI shows as its own state.
-  const shown = it => { const st = it.status || 'needs-you'; return st !== 'closed' && pendingFor(it.id).length ? 'sent' : st; };
+  const shown = it => { const st = it.status || 'needs-you'; return it.unread ? 'added' : st !== 'closed' && pendingFor(it.id).length ? 'sent' : st; };
   // "Fresh" = the AI wrote into an item since this browser last opened it; the dot pulses until then.
   const byId = new Map();
   const aiCount = it => (it.thread || []).filter(m => m.who === 'ai' && m.kind !== 'question').length;
   const seenKey = id => 'seen:' + id;
-  const isFresh = it => { const v = store.get(seenKey(it.id)); return v === '' ? !!store.get('init') : aiCount(it) > Number(v); };
+  const isFresh = it => { if (it.unread || (it.author === 'user' && !aiCount(it))) return false; const v = store.get(seenKey(it.id)); return v === '' ? !!store.get('init') : aiCount(it) > Number(v); };
   const isNewItem = it => !!it.round && it.round === state.round && state.round > 1;
   function markSeen(id) {
     const it = byId.get(id);
@@ -271,9 +628,37 @@ section.general .answer{max-width:720px}
     return true;
   }
   function freshIds() { const out = []; byId.forEach((it, id) => { if (isFresh(it)) out.push(id); }); return out; }
-  const QUICK = ['Agree', 'Disagree, because ', 'Explain further', 'Ready to close'];
+  // Stock answers become the reader's own message, so they follow the content's language, not the interface's.
+  const QUICK_BY_LANG = {
+    en: ['Agreed', 'Disagree, because ', 'Explain in more detail', 'OK to close'],
+    ru: ['Согласен', 'Не согласен, потому что ', 'Объясни подробнее', 'Можно закрывать'],
+  };
+  const contentLang = () => state?.lang || (/[А-Яа-яЁё]/.test((state?.title || '') + (state?.subtitle || '')) ? 'ru' : 'en');
+  const quickReplies = () => QUICK_BY_LANG[contentLang()] || QUICK_BY_LANG.en;
+  const ICONS = {
+    pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+    doc: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>',
+    min: '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" x2="21" y1="10" y2="3"/><line x1="3" x2="10" y1="21" y2="14"/>',
+    panel: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
+    search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    qr: '<rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>',
+    send: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    reopen: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+    sub: '<polyline points="15 10 20 15 15 20"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/>',
+    trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+    max: '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/>',
+    down: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
+    expand: '<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>',
+    collapse: '<path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    system: '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>',
+    light: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+    dark: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+  };
+  const ico = name => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
   const THEMES = ['system', 'light', 'dark'];
-  const THEME_LABEL = { system: '◐ System', light: '☀ Light', dark: '☾ Dark' };
+  const THEME_LABEL = { system: 'Theme: system', light: 'Theme: light', dark: 'Theme: dark' };
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const store = {
@@ -282,7 +667,13 @@ section.general .answer{max-width:720px}
     set(id, v) { try { v ? localStorage.setItem(this.key(id), v) : localStorage.removeItem(this.key(id)); } catch {} },
   };
 
-  let state = null, pending = [], filter = 'open', query = '';
+  // `raw` is state.json as published; `state` is what the page shows: raw plus page actions the AI has not read yet.
+  let raw = null, state = null, pending = [], filter = 'open', query = '';
+  // The add-item form that is open now: {kind:'group'|'parent'|'phantom', target, title, text}; survives live re-renders.
+  let form = null;
+  try { form = JSON.parse(store.get('form') || 'null'); } catch {}
+  const saveForm = () => store.set('form', form ? JSON.stringify(form) : '');
+  // Items the reader is working in stay on screen and keep their answer box even if the AI closes them meanwhile.
   const pinned = new Set();
   const THREAD_TAIL = 5;
   const fullThreads = new Set();
@@ -296,7 +687,7 @@ section.general .answer{max-width:720px}
   function applyTheme(t) {
     if (t === 'system') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
     try { t === 'system' ? localStorage.removeItem('dq:theme') : localStorage.setItem('dq:theme', t); } catch {}
-    $('theme').textContent = THEME_LABEL[t];
+    $('theme').innerHTML = ico(t); $('theme').title = THEME_LABEL[t];
     syncHighlightTheme();
     redrawDiagrams();
   }
@@ -309,9 +700,33 @@ section.general .answer{max-width:720px}
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (currentTheme() === 'system') { syncHighlightTheme(); redrawDiagrams(); } });
 
   // ---------- markdown & diagrams
+  // Tables inside collapsed <details> have no width, so they can only be measured once opened.
+  // A message earns the full-screen button when it renders taller than three lines or holds more than paragraphs.
+  function markBig() {
+    document.querySelectorAll('details.item[open] .msg[data-msg]:not(.sized)').forEach(m => {
+      const box = m.querySelector(':scope > .md');
+      if (!box || !box.offsetHeight) return;
+      m.classList.add('sized');
+      const line = parseFloat(getComputedStyle(box).lineHeight) || 22;
+      const rich = box.querySelector('table, pre, .mermaid, img, .callout, h1, h2, h3, h4');
+      m.classList.toggle('big', !!rich || box.scrollHeight > line * 3.4);
+    });
+  }
+  function markLong() {
+    markBig();
+    document.querySelectorAll('details.item[open] .msg[data-msg]:not(.measured):not(.expanded)').forEach(m => {
+      const box = m.querySelector(':scope > .md');
+      if (!box || !box.offsetHeight) return;
+      m.classList.add('measured');
+      // The newest message is the one being read: it is never clamped.
+      const newest = [...m.parentElement.querySelectorAll(':scope > .msg[data-msg]')].pop() === m;
+      m.classList.toggle('long', !newest && box.scrollHeight > 380);
+    });
+  }
   function fitTables() {
-    document.querySelectorAll('details.item[open] > .ibody:not(.wide)').forEach(body => {
-      if ([...body.querySelectorAll(':scope > .col-text table')].some(table => table.scrollWidth > table.clientWidth)) body.classList.add('wide');
+    markLong();
+    document.querySelectorAll('details.item[open] > .ibody:not(.wide)').forEach(b => {
+      if ([...b.querySelectorAll(':scope > .col-text table')].some(t => t.scrollWidth > t.clientWidth)) b.classList.add('wide');
     });
   }
   function md(text) {
@@ -324,8 +739,34 @@ section.general .answer{max-width:720px}
       div.dataset.src = code.textContent;
       code.parentElement.replaceWith(div);
     });
+    const CALLOUT = { NOTE: 'Note', TIP: 'Tip', IMPORTANT: 'Important', WARNING: 'Warning', CAUTION: 'Caution' };
+    box.querySelectorAll('blockquote').forEach(q => {
+      const first = q.querySelector(':scope > p');
+      const m = first?.innerHTML.match(/^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(?:<br>)?\s*/i);
+      if (!m) return;
+      first.innerHTML = first.innerHTML.slice(m[0].length);
+      if (!first.innerHTML.trim()) first.remove();
+      const div = document.createElement('div');
+      div.className = 'callout ' + m[1].toLowerCase();
+      div.innerHTML = `<span class="ct">${CALLOUT[m[1].toUpperCase()]}</span>` + q.innerHTML;
+      q.replaceWith(div);
+    });
     box.querySelectorAll('td code, th code').forEach(code => { code.innerHTML = esc(code.textContent).replace(/([/.,{_|])(?=\S)/g, '$1<wbr>'); });
+    linkItemIds(box);
     return box.innerHTML;
+  }
+  // «see B3.8» in any text becomes a link that opens and scrolls to that item; code and existing links stay as they are.
+  const ITEM_REF = /\b[A-Z][0-9]+(?:\.[0-9]+)*\b/g;
+  function linkItemIds(box) {
+    const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentElement.closest('code, pre, a, .mermaid') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(n => {
+      const text = n.nodeValue;
+      if (!ITEM_REF.test(text)) return;
+      ITEM_REF.lastIndex = 0;
+      const html = esc(text).replace(ITEM_REF, id => byId.has(id) ? `<a class="iref" href="#i-${id}" data-jump="${id}">${id}</a>` : id);
+      const span = document.createElement('span'); span.innerHTML = html; n.replaceWith(...span.childNodes);
+    });
   }
   // mermaid.render lays a diagram out off-screen, so diagrams inside collapsed <details> come out
   // right; one at a time, or concurrent layouts measure each other.
@@ -349,16 +790,45 @@ section.general .answer{max-width:720px}
   function walk(items, fn, depth = 0) { (items || []).forEach(it => { fn(it, depth); walk(it.children, fn, depth + 1); }); }
   function flatItems(items) { const out = []; const go = (list, parentId) => (list || []).forEach(it => { out.push([it, parentId]); go(it.children, it.id); }); go(items, ''); return out; }
   function everyItem(fn) { (state.groups || []).forEach(g => walk(g.items, fn)); }
-  function pendingFor(id) { return pending.filter(p => (p.data?.item || '_general') === id); }
+  function pendingFor(id) { return pending.filter(p => !p.data?.type && (p.data?.item || '_general') === id); }
+  function withPending(base) {
+    const view = structuredClone(base);
+    view.groups = view.groups || [];
+    const find = id => { let hit = null; view.groups.forEach(g => walk(g.items, it => { if (it.id === id) hit = it; })); return hit; };
+    let added = 0;
+    pending.filter(p => p.data?.type).forEach(p => {
+      const d = p.data;
+      if (d.type === 'new') {
+        const it = d.title ? { id: '+' + (++added), title: d.title, body: d.text || '', status: 'in-progress', unread: true, thread: [] }
+          : { id: '+' + (++added), title: firstLine(d.text), body: '', status: 'in-progress', unread: true, thread: [{ who: 'user', round: base.round, at: p.at, text: d.text }] };
+        const parent = d.parent && find(d.parent);
+        if (parent) { (parent.children = parent.children || []).push(it); return; }
+        let g = d.newGroup ? null : view.groups.find(x => x.id === d.group) || view.groups.find(x => x.own);
+        if (d.newGroup) { g = d.newGroup === true ? null : view.groups.find(x => x.pseudo && x.title === d.newGroup); if (!g) { g = { id: '+' + (++added), title: d.newGroup === true ? 'New section — the AI will name it' : d.newGroup, pseudo: true, items: [] }; view.groups.push(g); } }
+        if (!g) { g = { id: '+', title: 'Your items', own: true, pseudo: true, items: [] }; view.groups.push(g); }
+        (g.items = g.items || []).push(it);
+      } else {
+        const it = find(d.item);
+        if (!it) return;
+        it.status = d.type === 'delete' ? 'deleted' : d.status === 'needs-you' ? 'in-progress' : d.status;
+        if (d.status === 'closed') it.resolution = d.text || it.resolution || 'Closed by you';
+      }
+    });
+    const prune = items => (items || []).filter(it => it.status !== 'deleted').map(it => ({ ...it, children: prune(it.children) }));
+    view.groups = view.groups.map(g => ({ ...g, items: prune(g.items) }));
+    return view;
+  }
+  function firstLine(text) { const t = plain(text).split(/(?<=[.!?])\s/)[0] || 'New item'; return t.length > 70 ? t.slice(0, 67) + '…' : t; }
+  function refreshView() { state = withPending(raw); }
   function fmtTime(at) {
     const d = new Date(at);
-    return at && !isNaN(d) ? d.toLocaleString('en-US', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+    return at && !isNaN(d) ? d.toLocaleString('en-GB', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
   }
   function plain(mdText) { return String(mdText || '').replace(/[*_`>#\[\]]/g, '').replace(/\s+/g, ' ').trim(); }
   // One line under a collapsed title: the item's own question, else its first sentence.
   function preview(it) {
     const body = String(it.body || '');
-    const m = body.match(/What I need from you[^:]*:\**\s*([\s\S]*?)(\n\n|$)/i);
+    const m = body.match(/(?:Что нужно от тебя|What I need from you)[^:]*:\**\s*([\s\S]*?)(\n\n|$)/i);
     const text = plain(m ? m[1] : body.split(/\n\n/)[0]);
     return text.length > 160 ? text.slice(0, 157) + '…' : text;
   }
@@ -369,50 +839,93 @@ section.general .answer{max-width:720px}
   }
 
   // ---------- render
-  function msgHTML(m) {
-    if (m.kind === 'question') return `<details class="msg q"><summary>Question from round ${esc(m.round)} — wording when you replied</summary><div class="md">${md(m.text)}</div></details>`;
-    return `<div class="msg ${m.who === 'user' ? 'user' : 'ai'}">
-      <div class="who"><b>${m.who === 'user' ? 'You' : 'AI'}</b> · round ${esc(m.round)}${m.at ? ' · ' + fmtTime(m.at) : ''}${m.item ? ' · about ' + esc(m.item) : ''}</div>
-      <div class="md">${md(m.text)}</div></div>`;
+  // Messages rendered on the page, by index, so the viewer can open one in full.
+  let shownMsgs = [];
+  // Long messages the reader expanded in place stay expanded across re-renders.
+  const fullMsgs = new Set();
+  const msgKey = (m, itemId) => itemId + '|' + (m.at || '') + '|' + (m.who || '');
+  // Full screen is offered only where it helps: long text or anything beyond plain paragraphs.
+  function isRich(text) {
+    const t = String(text || '');
+    return t.split('\n').filter(l => l.trim()).length > 3 || t.length > 300 || /```|^\s*\||!\[|^\s*#{1,4}\s|\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]/im.test(t);
+  }
+  function msgHTML(m, itemId = '') {
+    if (m.kind === 'event') return `<div class="msg ev">${m.who === 'user' ? 'You' : 'AI'}: ${esc(m.text)}${m.at ? ' · ' + fmtTime(m.at) : ''}</div>`;
+    if (m.kind === 'question') return `<details class="msg q"><summary>Description updated (round ${esc(m.round)}) — show the earlier one</summary><div class="md">${md(m.text)}</div></details>`;
+    const k = shownMsgs.push({ ...m, itemId }) - 1;
+    return `<div class="msg ${m.who === 'user' ? 'user' : 'ai'}${m.ask ? ' ask' : ''}${fullMsgs.has(msgKey(m, itemId)) ? ' expanded' : ''}" data-msg="${k}" data-key="${esc(msgKey(m, itemId))}">
+      <div class="who"><b>${m.who === 'user' ? 'You' : 'AI'}</b>${m.ask ? '<span class="asktag">question for you</span>' : ''} · ${m.at ? fmtTime(m.at) : 'round ' + esc(m.round)}${m.item ? ' · about ' + esc(m.item) : ''}${m.from ? ` · after your answer in <a class="iref" href="#i-${esc(m.from)}" data-jump="${esc(m.from)}">${esc(m.from)}</a>` : ''}<button type="button" class="ibtn sm vbtn" data-view="${k}" title="Open full screen" aria-label="Open full screen">${ico('max')}</button></div>
+      <div class="md">${md(m.text)}</div><button type="button" class="more-btn" data-full="${esc(msgKey(m, itemId))}">${fullMsgs.has(msgKey(m, itemId)) ? 'Show less' : 'Show in full'}</button></div>`;
   }
   function pendingHTML(p) {
-    return `<div class="msg user pending"><div class="who"><b>You</b> · sent ${fmtTime(p.at)} · AI has not read it yet</div><div class="md">${md(p.data?.text)}</div></div>`;
+    return `<div class="msg user pending"><div class="who"><b>You</b> · sent ${fmtTime(p.at)} · not read by the AI yet</div><div class="md">${md(p.data?.text)}</div></div>`;
   }
+  function actionsHTML(it) {
+    const id = esc(it.id);
+    return `<div class="iacts">${it.status === 'closed'
+      ? `<button type="button" class="ibtn" data-setstatus="needs-you" data-for="${id}" title="Reopen the item" aria-label="Reopen the item">${ico('reopen')}</button>`
+      : `<button type="button" class="ibtn ok" data-setstatus="closed" data-for="${id}" title="Close the item (the text in the box becomes its outcome)" aria-label="Close the item">${ico('check')}</button>`}
+      <button type="button" class="ibtn" data-subitem="${id}" title="Add a sub-item" aria-label="Add a sub-item">${ico('sub')}</button>
+      <button type="button" class="ibtn danger" data-delete="${id}" title="Delete the item" aria-label="Delete the item">${ico('trash')}</button></div>`;
+  }
+
+  // Only a height the reader dragged is remembered (it survives re-renders and reloads); otherwise the box fits its text.
+  const H_KEY = id => 'hm:' + id;
+  function heightAttr(key) { const h = Number(store.get(H_KEY(key))); return h ? ` style="height:${h}px"` : ''; }
+  function autosize(t) {
+    const max = Math.round(innerHeight * (t.id === 'nf-text' ? 0.6 : 0.3)), kept = Number(store.get(H_KEY(t.id))) || 0;
+    // Collapse before measuring: 'auto' would fall back to the rows attribute and jump to four lines.
+    t.style.height = '0px';
+    t.style.height = Math.min(Math.max(t.scrollHeight + 2, kept, t.id === 'nf-text' ? 84 : (innerWidth <= 700 ? 42 : 96)), Math.max(max, kept)) + 'px';
+  }
+  let dragFrom = null;
+  document.addEventListener('pointerdown', e => { if (e.target.matches?.('textarea[data-item], #nf-text')) dragFrom = [e.target, e.target.offsetHeight]; });
+  document.addEventListener('pointerup', () => {
+    if (dragFrom && dragFrom[0].offsetHeight !== dragFrom[1]) store.set(H_KEY(dragFrom[0].id), String(dragFrom[0].offsetHeight));
+    dragFrom = null;
+  });
+  function watchSizes() { document.querySelectorAll('textarea[data-item], #nf-text').forEach(t => { if (t.value) autosize(t); }); }
+  // A couple of plain lines are not worth a click: they show inline instead of behind «Details».
+  function shortDetails(text) { return plain(text).length < 320 && !/```|^\s*\||!\[/m.test(text); }
   function answerHTML(it) {
     const id = esc(it.id);
+    if (it.unread) return '<p class="closed-note">You added this item. Its number and an answer appear once the AI reads it.</p>';
     const closed = it.status === 'closed';
     const draft = store.get(it.id);
     const keep = closed && (draft || pinned.has(it.id));
-    if (closed && !keep) return `<button class="reopen" type="button" data-reopen="${id}">Return to this item and add a comment</button>`;
-    return `<div class="answer">${keep ? '<p class="closed-note">AI closed this item. You can still reply and reopen it.</p>' : ''}
-      <label for="ans-${id}">Your answer</label>
-      <textarea id="ans-${id}" data-item="${id}" placeholder="Answer, clarification, or question">${esc(draft)}</textarea>
-      <div class="quick">${QUICK.map(q => `<button type="button" data-quick="${esc(q)}" data-for="${id}">${esc(q.trim())}</button>`).join('')}</div>
-      <div class="arow"><span class="hint">Ctrl+Enter to send</span><button class="btn" type="button" data-send="${id}">Send</button></div>
+    if (closed && !keep) return `<div class="closed-row"><button class="reopen" type="button" data-reopen="${id}">Back to this item — write a comment</button></div>`;
+    return `<div class="answer">${keep ? '<p class="closed-note">The AI closed this item. You can still send an answer — it reopens the item.</p>' : ''}
+      <div class="crow1"><div class="chips">${(it.replies || []).map(q => `<button type="button" class="chip ai" data-quick="${esc(q)}" data-for="${id}" title="Suggested by the AI: ${esc(q)}">${esc(q)}</button>`).join('')}${quickReplies().map(q => `<button type="button" class="chip" data-quick="${esc(q)}" data-for="${id}">${esc(q.trim())}</button>`).join('')}</div></div>
+      <div class="cbox"><textarea id="ans-${id}" data-item="${id}"${heightAttr('ans-' + it.id)} rows="${innerWidth <= 700 ? 1 : 4}" aria-label="Your answer" placeholder="${innerWidth <= 700 ? 'Reply…' : 'Your answer, a follow-up or a question'}">${esc(draft)}</textarea>
+        <div class="cbar"><span class="hint">Ctrl+Enter to send</span><button class="ibtn grow" type="button" data-compose="${id}" title="Expand the answer box" aria-label="Expand the answer box">${ico('max')}</button><button class="send" type="button" data-send="${id}" title="Send (Ctrl+Enter)" aria-label="Send">${ico('send')}</button></div></div>
     </div>`;
   }
+  function plural(n, one, few, many) { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many; }
   function itemHTML(it, open, parentId = '') {
     const st = it.status || 'needs-you';
     const pend = pendingFor(it.id);
     const tags = (it.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
-    const messages = [...(it.thread || []).map(msgHTML), ...pend.map(pendingHTML)];
-    const hidden = fullThreads.has(it.id) ? 0 : Math.max(messages.length - THREAD_TAIL, 0);
-    const thread = (hidden ? `<button class="older" type="button" data-older="${esc(it.id)}">Show ${hidden} earlier ${hidden === 1 ? 'message' : 'messages'}</button>` : '') + messages.slice(hidden).join('');
+    const msgs = [...(it.thread || []).map(m => msgHTML(m, it.id)), ...pend.map(pendingHTML)];
+    const hidden = fullThreads.has(it.id) ? 0 : Math.max(msgs.length - THREAD_TAIL, 0);
+    const thread = (hidden ? `<button class="older" type="button" data-older="${esc(it.id)}">Show ${hidden} earlier ${hidden === 1 ? 'message' : 'messages'}</button>` : '') + msgs.slice(hidden).join('');
     return `
-    <details class="item s-${st}${parentId ? ' child' : ''}" id="i-${esc(it.id)}" data-id="${esc(it.id)}"${parentId ? ` data-parent="${esc(parentId)}"` : ''} data-status="${st}"${open ? ' open' : ''}>
+    <details class="item s-${st} v-${shown(it)}${parentId ? ' child' : ''}" id="i-${esc(it.id)}" data-id="${esc(it.id)}"${parentId ? ` data-parent="${esc(parentId)}"` : ''} data-status="${st}"${open ? ' open' : ''}>
       <summary>
         <span class="mark s-${shown(it)}${isFresh(it) ? ' fresh' : ''}" data-fresh="${esc(it.id)}"></span>
         <span class="iid">${esc(it.id)}</span>
         <span class="ttl">${esc(it.title)}</span>
-        <span class="state">${parentId ? `<span class="parent-ref">re: ${esc(parentId)}</span>` : ''}${tags}${isNewItem(it) ? '<span class="tag new">new item</span>' : ''}${isFresh(it) && !isNewItem(it) ? `<span class="n" data-fresh="${esc(it.id)}">${store.get(seenKey(it.id)) === '' ? 'new item' : 'new AI reply'}</span>` : ''}<span class="${STATE_CLASS[shown(it)] || ''}">${STATUS[shown(it)] || st}</span></span>
+        <span class="state">${parentId ? `<span class="parent-ref">under ${esc(parentId)}</span>` : ''}${tags}${isNewItem(it) ? '<span class="tag new">new item</span>' : ''}${isFresh(it) && !isNewItem(it) ? `<span class="n" data-fresh="${esc(it.id)}">${store.get(seenKey(it.id)) === '' ? 'new item' : 'new AI reply'}</span>` : ''}<span class="${STATE_CLASS[shown(it)] || ''}">${STATUS[shown(it)] || st}</span></span>
         ${st !== 'closed' ? `<span class="preview">${esc(preview(it))}</span>` : (it.resolution ? `<span class="preview">Outcome: ${esc(it.resolution)}</span>` : '')}
       </summary>
       <div class="ibody">
         <div class="col-text">
           ${st === 'closed' && it.resolution ? `<div class="resolution"><b>Outcome.</b> ${esc(it.resolution)}</div>` : ''}
           ${it.action ? `<div class="action">${it.action.state === 'done' ? 'Done' : it.action.state === 'failed' ? 'Failed' : 'In progress'}: ${esc(it.action.text)}</div>` : ''}
+          ${it.unread ? '' : `<div class="body-head">${actionsHTML(it)}${it.body && isRich(it.body + (it.details ? '\n\n' + it.details : '')) ? `<button type="button" class="ibtn" data-viewbody="${esc(it.id)}" title="Description full screen" aria-label="Description full screen">${ico('max')}</button>` : ''}</div>`}
           <div class="md">${md(it.body)}</div>
-          ${it.details ? `<details class="more"><summary>Details: diagrams, examples, code</summary><div class="md">${md(it.details)}</div></details>` : ''}
+          ${!it.details ? '' : shortDetails(it.details) ? `<div class="more-inline"><span class="ml">Details</span><div class="md">${md(it.details)}</div></div>`
+            : `<details class="more"><summary>Details</summary><div class="md">${md(it.details)}</div></details>`}
+          ${msgs.length > 1 ? `<button type="button" class="ibtn wide tolast" data-tolast="${esc(it.id)}" title="Jump to the latest message" aria-label="Jump to the latest message">${ico('down')}<span class="cnt">${msgs.length}</span></button>` : ''}
           ${thread ? `<div class="thread">${thread}</div>` : ''}
         </div>
         <div class="col-answer">${answerHTML(it)}</div>
@@ -422,21 +935,22 @@ section.general .answer{max-width:720px}
 
   function render(soft = false) {
     byId.clear(); everyItem(it => byId.set(it.id, it));
+    shownMsgs = [];
     document.title = state.title || 'Discussion';
     $('title').textContent = state.title || 'Discussion';
     $('subtitle').textContent = state.subtitle || '';
-    $('eyebrow').textContent = `Point-by-point discussion · round ${state.round || 1}`;
+    $('eyebrow').textContent = `Discussion · round ${state.round || 1}`;
     if (state.context) { $('ctx').hidden = false; $('ctxbody').innerHTML = md(state.context); }
 
-    const c = { 'needs-you': 0, sent: 0, 'in-progress': 0, closed: 0 };
+    const c = { 'needs-you': 0, sent: 0, added: 0, 'in-progress': 0, closed: 0 };
     let total = 0;
     everyItem(it => { total++; c[shown(it)]++; });
     $('progress').innerHTML = `
-      <span>Resolved <b>${c.closed}</b> of <b>${total}</b></span>
+      <span>Settled <b>${c.closed}</b> of <b>${total}</b></span>
       <span class="bar" aria-hidden="true"><i style="width:${total ? Math.round(c.closed / total * 100) : 0}%"></i></span>
-      <span>awaiting you <b>${c['needs-you']}</b></span>
-      ${c['in-progress'] ? `<span>AI is working <b>${c['in-progress']}</b></span>` : ''}
-      ${c.sent ? `<span>you replied <b>${c.sent}</b> — AI has not read it yet</span>` : ''}
+      <span>need you <b>${c['needs-you']}</b></span>
+      ${c['in-progress'] ? `<span>AI is on <b>${c['in-progress']}</b></span>` : ''}
+      ${c.sent ? `<span>you answered <b>${c.sent}</b> — not read yet</span>` : ''}
       <span>updated ${fmtTime(state.updated)}</span>`;
 
     // Only the first item that waits for an answer starts open; the rest stay one line each.
@@ -446,45 +960,63 @@ section.general .answer{max-width:720px}
 
     $('groups').innerHTML = (state.groups || []).map(g => {
       const k = counts(g.items);
-      return `<section class="group" id="g-${esc(g.id)}">
-        <h2><span class="gid">${esc(g.id)}</span>${esc(g.title)}<span class="gcount">${k.closed} of ${k.total}</span></h2>
+      const rows = flatItems(g.items).map(([it, parentId]) => ({ id: it.id, html: itemHTML(it, !soft && it.id === (hashId || firstOpen), parentId) }));
+      if (form?.kind === 'parent') {
+        const at = rows.map(r => r.id).reduce((last, id, i) => id === form.target || id.startsWith(form.target + '.') ? i : last, -1);
+        if (at >= 0) rows.splice(at + 1, 0, { id: '', html: formHTML() });
+      }
+      const pseudo = g.pseudo || String(g.id).startsWith('+');
+      const tail = pseudo ? '' : form?.kind === 'group' && form.target === g.id ? formHTML()
+        : `<button type="button" class="addblock" data-addto="${esc(g.id)}"><span class="plus">+</span>Add an item to section ${esc(g.id)}</button>`;
+      return `<section class="group${pseudo ? ' pseudo' : ''}" id="g-${esc(g.id)}">
+        <h2><span class="gid">${pseudo ? '+' : esc(g.id)}</span>${esc(g.title)}${pseudo ? '<span class="tag new">new section — not read yet</span>' : ''}<span class="gcount">${k.closed} of ${k.total}</span></h2>
         ${g.intro ? `<div class="gintro md">${md(g.intro)}</div>` : ''}
-        <div class="items">${flatItems(g.items).map(([it, parentId]) => itemHTML(it, !soft && (it.id === (hashId || firstOpen) || !!store.get(it.id)), parentId)).join('')}</div>
+        <div class="items">${rows.map(r => r.html).join('')}${tail}</div>
       </section>`;
-    }).join('');
+    }).join('') + phantomHTML();
 
-    $('generalThread').innerHTML = (state.general || []).length || pendingFor('_general').length
-      ? `<div class="thread" style="margin:0 0 16px">${(state.general || []).map(msgHTML).join('')}${pendingFor('_general').map(pendingHTML).join('')}</div>` : '';
-
-    $('rail').innerHTML = (state.groups || []).map(g => {
+    $('rail').innerHTML = `<div class="rail-head"><b>Items</b><button type="button" class="ibtn" id="railclose" title="Close" aria-label="Close">${ico('x')}</button></div>` + (state.groups || []).map(g => {
       const k = counts(g.items);
       let links = '';
       walk(g.items, (it, d) => {
         links += `<a href="#i-${esc(it.id)}" class="${d ? 'sub ' : ''}s-${shown(it)}" data-jump="${esc(it.id)}"><span class="mark s-${shown(it)}${isFresh(it) ? ' fresh' : ''}" data-fresh="${esc(it.id)}"></span><span class="rid">${esc(it.id)}</span><span class="rt">${esc(it.title)}</span></a>`;
       });
-      return `<div class="g"><div class="gh"><span>${esc(g.id)}. ${esc(g.title)}</span><span>${k.closed}/${k.total}</span></div>${links}</div>`;
+      return `<div class="g"><div class="gh"><span>${String(g.id).startsWith('+') ? '+' : esc(g.id) + '.'} ${esc(g.title)}</span><span>${k.closed}/${k.total}</span></div>${links}</div>`;
     }).join('');
 
     document.querySelectorAll('#groups pre code, #ctxbody pre code').forEach(el => hljs.highlightElement(el));
     drawDiagrams();
     fitTables();
+    watchSizes();
     applyFilter();
     syncPill();
     markCurrent();
+    syncNavFab();
   }
 
+  // «With AI»: answers and items the AI has not read yet, plus items it is working on.
+  const AI_SIDE = new Set(['sent', 'added', 'in-progress']);
+  function syncFilterCounts() {
+    let mine = 0, ai = 0;
+    everyItem(it => { const v = shown(it); if (v === 'needs-you') mine++; if (AI_SIDE.has(v)) ai++; });
+    document.querySelectorAll('[data-count="mine"]').forEach(n => { n.textContent = mine ? ' ' + mine : ''; });
+    document.querySelectorAll('[data-count="ai"]').forEach(n => { n.textContent = ai ? ' ' + ai : ''; });
+  }
   function applyFilter() {
+    syncFilterCounts();
     const q = query.trim().toLowerCase();
+    // Children come after their parent, so walking backwards tells a parent whether a child stays visible.
     const keep = new Set();
     [...document.querySelectorAll('details.item')].reverse().forEach(el => {
       const st = el.dataset.status;
-      let show = filter === 'all' || (filter === 'closed' ? st === 'closed' : st !== 'closed');
+      const v = [...el.classList].find(c => c.startsWith('v-'))?.slice(2) || st;
+      let show = filter === 'all' || (filter === 'closed' ? st === 'closed' : filter === 'mine' ? v === 'needs-you' : filter === 'ai' ? AI_SIDE.has(v) : st !== 'closed');
       if (q) show = el.textContent.toLowerCase().includes(q);
       show = show || keep.has(el.dataset.id) || (!q && pinned.has(el.dataset.id));
       el.classList.toggle('hidden-by-filter', !show);
       if (show && el.dataset.parent) keep.add(el.dataset.parent);
     });
-    document.querySelectorAll('section.group').forEach(sec => {
+    document.querySelectorAll('section.group:not(.phantom)').forEach(sec => {
       sec.classList.toggle('hidden-by-filter', !sec.querySelector('details.item:not(.hidden-by-filter)'));
     });
   }
@@ -499,7 +1031,7 @@ section.general .answer{max-width:720px}
   function syncPill() {
     const n = drafts().length;
     $('pill').hidden = !n;
-    $('pilltext').textContent = n === 1 ? '1 draft' : (n < 5 ? `${n} drafts` : `${n} drafts`);
+    $('pilltext').textContent = n === 1 ? '1 draft' : `${n} drafts`;
   }
   function toast(msg) {
     const t = $('toast'); t.textContent = msg; t.classList.add('on');
@@ -511,12 +1043,178 @@ section.general .answer{max-width:720px}
     if (!text) return false;
     const res = await fetch('feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ item: id, text, round: state.round }) });
-    if (!res.ok) { toast('Could not send (' + res.status + '). Draft saved.'); return false; }
+    if (!res.ok) { toast('Not sent (' + res.status + '). The draft is kept.'); return false; }
     const { at } = await res.json();
     pending.push({ at, data: { item: id, text } });
     ta.value = ''; store.set(id, '');
     return true;
   }
+  async function sendAction(data) {
+    const res = await fetch('feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, round: state.round }) });
+    if (!res.ok) { toast('Not sent (' + res.status + ')'); return false; }
+    const { at } = await res.json();
+    pending.push({ at, data });
+    refreshView();
+    softRender(false, data.item || '');
+    $('sentnote').hidden = false;
+    return true;
+  }
+  function nextGroupLetter() {
+    const used = new Set((raw.groups || []).map(g => g.id));
+    const free = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].filter(c => !used.has(c));
+    const waiting = pending.filter(p => p.data?.type === 'new' && p.data.newGroup).length;
+    return free[waiting] || '?';
+  }
+  function formHTML() {
+    const tag = form.kind === 'parent' ? `Sub-item under ${esc(form.target)}` : form.kind === 'group' ? `New item in section ${esc(form.target)}` : 'New section';
+    return `<div class="item-form${form.kind === 'parent' ? ' child' : ''}">
+      <span class="ftag">${tag}</span>
+      <textarea id="nf-text"${heightAttr('nf-text')} placeholder="Write in your own words what you want to discuss or get done. The AI names the ${form.kind === 'phantom' ? 'section and the item' : 'item'}, describes it and answers in the chat" aria-label="First message">${esc(form.text)}</textarea>
+      <div class="arow"><span class="hint">This opens the item's chat · Ctrl+Enter</span><button type="button" class="btn-ghost" data-formcancel="1">Cancel</button><button type="button" class="btn" data-formsubmit="1">Add</button></div>
+    </div>`;
+  }
+  // A phantom section at the end: name it and add its first item, and it becomes a real section.
+  function phantomHTML() {
+    const open = form?.kind === 'phantom';
+    return `<section class="group phantom" id="g-phantom">
+      <h2><span class="gid">${nextGroupLetter()}</span>New section</h2>
+      <div class="items">${open ? formHTML() : '<button type="button" class="addblock" data-addto="phantom"><span class="plus">+</span>Start a new section — just write the first message</button>'}</div>
+    </section>`;
+  }
+  function openForm(kind, target) {
+    form = { kind, target, text: form?.text || '' };
+    saveForm(); softRender(false);
+    const el = $('nf-text'); el?.scrollIntoView({ behavior: 'smooth', block: 'center' }); el?.focus({ preventScroll: true });
+  }
+  async function submitForm() {
+    const text = (form?.text || '').trim();
+    if (!text) { $('nf-text')?.focus(); toast('Write what the item is about'); return; }
+    const data = form.kind === 'parent' ? { type: 'new', text, parent: form.target }
+      : form.kind === 'group' ? { type: 'new', text, group: form.target } : { type: 'new', text, newGroup: true };
+    const done = form; form = null; saveForm();
+    if (!(await sendAction(data))) { form = done; saveForm(); softRender(false); return; }
+    softRender(false);
+    toast('Added — the AI will name it and reply');
+  }
+
+
+  // QR of this page (without the item hash), drawn by qrcode-generator loaded on first use.
+  function loadScript(src) { return new Promise((ok, fail) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = fail; document.head.append(s); }); }
+  async function openQR() {
+    const url = location.href.split('#')[0];
+    try {
+      if (!window.qrcode) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js');
+      const q = qrcode(0, 'M'); q.addData(url); q.make();
+      $('qrimg').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+    } catch { $('qrimg').textContent = 'Could not draw the QR code'; }
+    $('qrurl').textContent = url;
+    $('qrbox').showModal();
+  }
+  function syncMaxButtons() {
+    ['viewer', 'composer'].forEach(id => {
+      const d = $(id), on = store.get('max:' + id) === '1';
+      d.classList.toggle('max', on);
+      d.querySelectorAll('[data-maxfor]').forEach(b => { b.innerHTML = ico(on ? 'min' : 'max'); b.title = b.ariaLabel = on ? 'Exit full screen' : 'Full screen'; });
+    });
+  }
+  function headHTML(it, meta = '') {
+    return `<span class="hid">${esc(it.id)}</span><span class="htt" title="${esc(it.title)}">${esc(it.title)}</span>${meta ? `<span class="hmeta">${meta}</span>` : ''}`;
+  }
+  function openViewer(head, text) {
+    $('vwho').innerHTML = head;
+    $('vmd').innerHTML = md(text);
+    $('vmd').querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+    if (!$('viewer').open) $('viewer').showModal();
+    $('viewer').querySelector('.vbody').scrollTop = 0;
+    drawDiagrams();
+  }
+  let composeFor = '';
+  // The item's conversation as a list: description first, then the chat (without earlier description versions).
+  function sideMessages(it) {
+    return [{ who: 'desc', text: (it.body || '') + (it.details ? '\n\n---\n\n' + it.details : '') }, ...(it.thread || []).filter(m => m.kind !== 'question'), ...pendingFor(it.id).map(p => ({ who: 'user', at: p.at, text: p.data?.text || '' }))];
+  }
+  function sideListHTML(msgs, attr, current = -1) {
+    return msgs.map((m, i) => {
+      if (m.kind === 'event') return `<div class="cmsg ev">${m.who === 'user' ? 'You' : 'AI'}: ${esc(m.text)}</div>`;
+      const who = m.who === 'desc' ? '<b>Description</b>' : `<b>${m.who === 'user' ? 'You' : 'AI'}</b>${m.ask ? ' · question' : ''}${m.at ? ' · ' + fmtTime(m.at) : ''}`;
+      return `<button type="button" class="cmsg ${m.who === 'desc' ? 'desc' : m.who === 'user' ? 'user' : 'ai'}${m.ask ? ' ask' : ''}${i === current ? ' cur' : ''}" ${attr}="${i}"><span class="cw">${who}</span><span class="ct">${esc(plain(m.text))}</span></button>`;
+    }).join('');
+  }
+  let composerMsgs = [];
+  function composerSide(it) {
+    const msgs = sideMessages(it);
+    composerMsgs = msgs;
+    $('cslist').innerHTML = sideListHTML(msgs, 'data-cmsg');
+    showSideList();
+    requestAnimationFrame(() => { $('cslist').scrollTop = $('cslist').scrollHeight; });
+  }
+  function showSideList() { $('csfull').hidden = true; $('cslist').hidden = false; $('cback').hidden = true; $('cside-title').hidden = false; }
+  let composerShown = -1;
+  function showSideMsg(i) {
+    const m = composerMsgs[i]; if (!m) return;
+    composerShown = i;
+    $('csfull').innerHTML = md(m.text);
+    $('csfull').querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+    $('cslist').hidden = true; $('csfull').hidden = false; $('cback').hidden = false; $('cside-title').hidden = true; $('csfull').scrollTop = 0;
+    drawDiagrams();
+  }
+  function openComposer(id) {
+    const it = byId.get(id), ta = $('ans-' + id); if (!it || !ta) return;
+    composeFor = id;
+    $('cwho').innerHTML = headHTML(it, 'Your answer');
+    $('cchips').innerHTML = $('i-' + id).querySelector('.col-answer .chips')?.innerHTML || '';
+    $('cchips').querySelectorAll('[data-for]').forEach(c => { c.dataset.for = 'composer'; });
+    $('ctext').value = ta.value;
+    composerSide(it);
+    $('composer').classList.toggle('noside', store.get('cside') === 'off');
+    $('composer').showModal();
+    $('ctext').focus(); $('ctext').setSelectionRange($('ctext').value.length, $('ctext').value.length);
+  }
+  function syncComposer() {
+    const ta = $('ans-' + composeFor); if (!ta) return;
+    ta.value = $('ctext').value; store.set(composeFor, ta.value); autosize(ta); syncPill();
+  }
+  let viewerItem = null, viewerMsgs = [];
+  function viewerShow(i) {
+    const m = viewerMsgs[i], it = viewerItem; if (!m || !it) return;
+    viewerIndex = i;
+    const head = headHTML(it, m.who === 'desc' ? 'Description' : `${m.who === 'user' ? 'You' : 'AI'}${m.ask ? ' · question for you' : ''}${m.at ? ' · ' + fmtTime(m.at) : ''}`);
+    $('vslist').querySelectorAll('.cmsg').forEach(b => b.classList.toggle('cur', b.dataset.vmsg === String(i)));
+    openViewer(head, m.text);
+  }
+  function syncViewerComposer(it) {
+    const ta = $('ans-' + it.id), box = $('vcomp');
+    box.hidden = !ta;
+    if (!ta) return;
+    $('vtext').value = ta.value;
+    $('vchips').innerHTML = $('i-' + it.id).querySelector('.col-answer .chips')?.innerHTML || '';
+    $('vchips').querySelectorAll('[data-for]').forEach(c => { c.dataset.for = 'viewer'; });
+    autosizeV();
+  }
+  function autosizeV() { const t = $('vtext'); t.style.height = '0px'; t.style.height = Math.min(Math.max(t.scrollHeight + 2, 44), innerHeight * 0.3) + 'px'; }
+  function syncFromViewer() {
+    const ta = viewerItem && $('ans-' + viewerItem.id); if (!ta) return;
+    ta.value = $('vtext').value; store.set(viewerItem.id, ta.value); autosize(ta); syncPill(); autosizeV();
+  }
+  let viewerIndex = 0;
+  function viewItemAt(it, i) {
+    viewerItem = it; viewerMsgs = sideMessages(it); syncViewerComposer(it);
+    $('vslist').innerHTML = sideListHTML(viewerMsgs, 'data-vmsg', i);
+    $('viewer').classList.toggle('noside', store.get('vside') === 'off');
+    viewerShow(i);
+    requestAnimationFrame(() => $('vslist').querySelector('.cmsg.cur')?.scrollIntoView({ block: 'center' }));
+  }
+  function viewMessage(k) {
+    const m = shownMsgs[k]; if (!m) return;
+    const it = byId.get(m.itemId); if (!it) return openViewer(`<b>${m.who === 'user' ? 'You' : 'AI'}</b>`, m.text);
+    const i = sideMessages(it).findIndex(x => x.at === m.at && x.who === m.who && x.text === m.text);
+    viewItemAt(it, Math.max(i, 0));
+  }
+  function viewBody(id) {
+    const it = byId.get(id); if (it) viewItemAt(it, 0);
+  }
+
   // The next item that still waits for an answer: after `fromId` in page order, else from the top.
   function nextWaiting(fromId) {
     const all = [...document.querySelectorAll('details.item:not(.hidden-by-filter)')];
@@ -546,7 +1244,7 @@ section.general .answer{max-width:720px}
     if (advance && ids.length === 1 && ids[0] !== '_general') {
       const next = nextWaiting(ids[0]);
       if (next) { openAndFocus(next); toast('Sent — next item ' + next.dataset.id); }
-      else toast('Sent. All items have answers');
+      else toast('Sent. Every item has an answer');
     } else {
       toast(ok === 1 ? 'Sent' : `Sent: ${ok}`);
     }
@@ -563,8 +1261,9 @@ section.general .answer{max-width:720px}
     } catch { return []; }
   }
   async function load() {
-    state = await (await fetch('state.json', { cache: 'no-store' })).json();
+    raw = state = await (await fetch('state.json', { cache: 'no-store' })).json();
     pending = await loadPending();
+    refreshView();
     // A first visit starts with everything seen: only answers arriving later pulse.
     if (!store.get('init')) { everyItem(it => store.set(seenKey(it.id), String(aiCount(it)))); store.set('init', '1'); }
     render();
@@ -575,90 +1274,281 @@ section.general .answer{max-width:720px}
   async function poll() {
     try {
       const fresh = await (await fetch('state.json', { cache: 'no-store' })).json();
-      const changed = fresh.updated !== state.updated;
-      if (changed) state = fresh;
+      const changed = fresh.updated !== raw.updated;
+      if (changed) raw = state = fresh;
       const nextPending = await loadPending();
       if (!changed && nextPending.length === pending.length) return;
       pending = nextPending;
+      refreshView();
       softRender(changed);
     } catch {}
   }
-  function softRender(announce) {
+  function softRender(announce, ownAction = '') {
     const openIds = [...document.querySelectorAll('details.item[open]')].map(d => d.dataset.id);
     const moreOpen = [...document.querySelectorAll('details.more[open]')].map(d => d.closest('details.item')?.dataset.id);
     const y = window.scrollY;
     const ae = document.activeElement;
     const caretItem = ae?.dataset?.item, caret = caretItem ? [ae.selectionStart, ae.selectionEnd] : null;
+    const formField = ae?.id?.startsWith('nf-') ? [ae.id, ae.selectionStart, ae.selectionEnd] : null;
     const before = new Set(freshIds());
-    [...openIds, ...drafts(), caretItem].forEach(id => id && pinned.add(id));
+    [...openIds, ...drafts(), caretItem].forEach(id => id && id !== ownAction && pinned.add(id));
+    pinned.delete(ownAction);
     render(true);
     openIds.forEach(id => $('i-' + id)?.setAttribute('open', ''));
     moreOpen.forEach(id => $('i-' + id)?.querySelector(':scope > .ibody details.more')?.setAttribute('open', ''));
     // An item that is already open shows its new message right away: highlight it instead of pulsing.
     openIds.forEach(id => { if (markSeen(id)) [...($('i-' + id)?.querySelectorAll(':scope > .ibody > .col-text > .thread > .msg.ai') || [])].pop()?.classList.add('flash'); });
     window.scrollTo(0, y);
+    if (formField) { const t = $(formField[0]); if (t) { t.focus({ preventScroll: true }); try { t.setSelectionRange(formField[1], formField[2]); } catch {} } }
     if (caretItem) { const t = $('ans-' + caretItem); if (t) { t.focus({ preventScroll: true }); try { t.setSelectionRange(...caret); } catch {} } }
     markCurrent();
     const arrived = freshIds().filter(id => !before.has(id));
     if (announce && arrived.length) toast('AI replied: ' + arrived.join(', '));
   }
 
+  // ---------- history: opening an item puts it in the address, so Back/Forward walk between items
+  function pushHash(id) { if (location.hash !== '#i-' + id) history.pushState(null, '', '#i-' + id); }
+  function goToItem(id, push) {
+    const el = $('i-' + id); if (!el) return;
+    if ($('viewer').open) $('viewer').close();
+    $('rail').classList.remove('open');
+    let p = el; while (p) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+    el.classList.remove('hidden-by-filter');
+    if (push) pushHash(id);
+    markCurrent();
+    // Toggle events (and the accordion closing other cards) run after this click; scroll when they are done.
+    setTimeout(() => requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      el.classList.remove('flash-item'); void el.offsetWidth; el.classList.add('flash-item');
+    }), 60);
+  }
+  function goToHash() {
+    const id = decodeURIComponent(location.hash.replace(/^#i-/, ''));
+    if (id) goToItem(id, false);
+  }
+  addEventListener('popstate', goToHash);
+  document.addEventListener('click', e => {
+    const sum = e.target.closest('details.item > summary');
+    if (sum && !sum.parentElement.open) pushHash(sum.parentElement.dataset.id);
+  });
+
+  const ICON_LIST = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>';
+  function syncNavFab() {
+    const fab = $('navfab'); if (!fab || !state) return;
+    let waiting = 0; everyItem(it => { if (shown(it) === 'needs-you') waiting++; });
+    fab.innerHTML = ICON_LIST + (waiting ? `<span class="nb">${waiting}</span>` : '');
+    fab.title = fab.ariaLabel = waiting ? `Items · ${waiting} need you` : 'Items';
+    $('upttl').textContent = state.title || '';
+  }
+  // Mobile browsers show their toolbars and the keyboard over the layout viewport; lift the sticky composer above them.
+  function syncVisualViewport() {
+    const vv = window.visualViewport; if (!vv) return;
+    const gap = Math.round(document.documentElement.clientHeight - (vv.height + vv.offsetTop));
+    document.documentElement.style.setProperty('--vvb', (gap > 0 && gap < 500 ? gap : 0) + 'px');
+  }
+  window.visualViewport?.addEventListener('resize', syncVisualViewport);
+  window.visualViewport?.addEventListener('scroll', syncVisualViewport);
+  addEventListener('resize', syncVisualViewport);
+
+  // ---------- the bar on scroll up
+  let lastY = scrollY, barTick = 0, barHoldUntil = 0;
+  function setBar(on) {
+    $('upbar').classList.toggle('on', on); $('upbar').setAttribute('aria-hidden', String(!on));
+    document.documentElement.style.setProperty('--stick', on ? $('upbar').offsetHeight + 'px' : '0px');
+  }
+  addEventListener('scroll', () => {
+    if (barTick) return;
+    barTick = requestAnimationFrame(() => {
+      barTick = 0;
+      const y = scrollY, up = y < lastY - 6, down = y > lastY + 6;
+      const toolbarGone = document.querySelector('.toolbar').getBoundingClientRect().bottom < 0;
+      syncVisualViewport();
+      if (Date.now() < barHoldUntil) { lastY = y; return; }
+      if (!toolbarGone || down) setBar(false);
+      else if (up) setBar(true);
+      if (up || down) lastY = y;
+    });
+  }, { passive: true });
+
+  // An empty search folds back into its icon when the reader leaves it.
+  document.addEventListener('focusout', e => {
+    if (e.target.id !== 'search' || e.target.value) return;
+    setTimeout(() => { if (document.activeElement?.id === 'searchbtn') return; document.querySelector('.toolbar').classList.remove('searching'); $('searchbtn').setAttribute('aria-expanded', 'false'); }, 150);
+  });
+
+  // ---------- rail width (desktop)
+  const RAIL_DEFAULT = 320, RAIL_MIN = 220, RAIL_MAX = 560;
+  function setRailWidth(w, save) {
+    const v = Math.round(Math.min(RAIL_MAX, Math.max(RAIL_MIN, w)));
+    document.querySelector('.shell').style.setProperty('--rail-w', v + 'px');
+    if (save) store.set('railw', v === RAIL_DEFAULT ? '' : String(v));
+  }
+  if (Number(store.get('railw'))) setRailWidth(Number(store.get('railw')), false);
+  $('railgrip').addEventListener('pointerdown', e => {
+    e.preventDefault();
+    const grip = e.currentTarget, left = document.querySelector('.shell').getBoundingClientRect().left + 32;
+    grip.classList.add('drag'); document.body.classList.add('resizing'); grip.setPointerCapture(e.pointerId);
+    const move = ev => setRailWidth(ev.clientX - left - 28, false);
+    const up = ev => { setRailWidth(ev.clientX - left - 28, true); grip.classList.remove('drag'); document.body.classList.remove('resizing'); grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); };
+    grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up);
+  });
+  $('railgrip').addEventListener('dblclick', () => setRailWidth(RAIL_DEFAULT, true));
+
+  // ---------- side panel width in the dialogs (desktop)
+  const SIDE_DEFAULT = { viewer: 340, composer: 360 };
+  function setSideWidth(id, w, save) {
+    const d = $(id), max = Math.max(260, d.getBoundingClientRect().width * 0.7);
+    const v = Math.round(Math.min(max, Math.max(220, w)));
+    d.style.setProperty('--side-w', v + 'px');
+    if (save) store.set('sidew:' + id, v === SIDE_DEFAULT[id] ? '' : String(v));
+  }
+  ['viewer', 'composer'].forEach(id => { const w = Number(store.get('sidew:' + id)); if (w) $(id).style.setProperty('--side-w', w + 'px'); });
+  document.querySelectorAll('.side-grip').forEach(grip => {
+    const id = grip.dataset.grip;
+    grip.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation();
+      const left = grip.parentElement.getBoundingClientRect().left;
+      grip.classList.add('drag'); document.body.classList.add('resizing'); grip.setPointerCapture(e.pointerId);
+      const move = ev => setSideWidth(id, ev.clientX - left, false);
+      const up = ev => { setSideWidth(id, ev.clientX - left, true); grip.classList.remove('drag'); document.body.classList.remove('resizing'); grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); };
+      grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up);
+    });
+    grip.addEventListener('dblclick', () => setSideWidth(id, SIDE_DEFAULT[id], true));
+  });
+
   // ---------- events
   document.addEventListener('input', e => {
     const t = e.target;
+    if (t.id === 'ctext') syncComposer();
+    if (t.id === 'vtext') syncFromViewer();
+    if (t.matches('textarea[data-item], #nf-text')) autosize(t);
     if (t.matches('textarea[data-item]')) { store.set(t.dataset.item, t.value); syncPill(); }
     if (t.id === 'search') { query = t.value; applyFilter(); }
+    if (form && t.id === 'nf-text') { form.text = t.value; saveForm(); }
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.matches('textarea[data-item]')) { e.preventDefault(); sendMany([e.target.dataset.item], true); }
-    if (e.key === 'Escape') $('rail').classList.remove('open');
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.id?.startsWith('nf-')) { e.preventDefault(); submitForm(); }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.id === 'ctext') { e.preventDefault(); $('csend').click(); }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.id === 'vtext') { e.preventDefault(); $('vsend').click(); }
+    if (e.key === 'Escape') { $('rail').classList.remove('open'); if (form && e.target.id?.startsWith('nf-')) { form = null; saveForm(); softRender(false); } }
   });
+  // One open card at a time. Closing the others keeps the opened card where the reader is looking.
+  let expandingAll = false;
+  function closeOthers(keep) {
+    const others = [...document.querySelectorAll('details.item[open]')].filter(d => d !== keep);
+    if (!others.length) return;
+    const before = keep.getBoundingClientRect().top;
+    others.forEach(d => { d.open = false; });
+    const shift = keep.getBoundingClientRect().top - before;
+    if (Math.abs(shift) > 1) scrollBy(0, shift);
+  }
+  document.addEventListener('toggle', e => { if (e.target.open && !expandingAll && e.target.matches?.('details.item')) closeOthers(e.target); }, true);
   document.addEventListener('toggle', e => { if (e.target.open) fitTables(); if (e.target.matches?.('details.item')) { if (e.target.open) markSeen(e.target.dataset.id); else pinned.delete(e.target.dataset.id); markCurrent(); } }, true);
   document.addEventListener('click', e => {
     const b = e.target.closest('button, a[data-jump]');
-    if (!b) { if (!e.target.closest('.rail, #navbtn')) $('rail').classList.remove('open'); return; }
+    if (b?.closest('#upbar')) barHoldUntil = Date.now() + 600;
+    if (b?.id === 'searchbtn') {
+      const tb = document.querySelector('.toolbar'), on = !tb.classList.contains('searching') || !!$('search').value;
+      tb.classList.toggle('searching', on); b.setAttribute('aria-expanded', String(on));
+      if (on) $('search').focus(); return;
+    }
+    if (b?.id === 'qrbtn') { openQR(); return; }
+    if (b?.id === 'qrclose') { $('qrbox').close(); return; }
+    if (b?.id === 'qrcopy') { navigator.clipboard?.writeText(location.href.split('#')[0]).then(() => toast('Link copied'), () => toast('Copy failed')); return; }
+    if (b?.id === 'navfab') { $('rail').classList.add('open'); return; }
+    if (b?.id === 'totop') { scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); setBar(false); return; }
+    if (!b) {
+      if (e.target === $('viewer')) $('viewer').close();
+      if (e.target === $('composer')) $('composer').close();
+      if (e.target === $('qrbox')) $('qrbox').close();
+      if (!e.target.closest('.rail, #navbtn')) $('rail').classList.remove('open');
+      return;
+    }
     if (b.dataset.send) sendMany([b.dataset.send], true);
+    else if (b.dataset.quick && b.dataset.for === 'composer') {
+      const ta = $('ctext');
+      ta.value = (ta.value.trim() ? ta.value.replace(/\s*$/, '\n') : '') + b.dataset.quick;
+      syncComposer(); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+    }
+    else if (b.dataset.compose) openComposer(b.dataset.compose);
+    else if (b.id === 'cclose') $('composer').close();
+    else if (b.id === 'csidebtn') { const off = !$('composer').classList.contains('noside'); $('composer').classList.toggle('noside', off); store.set('cside', off ? 'off' : ''); }
+    else if (b.dataset.cmsg) showSideMsg(Number(b.dataset.cmsg));
+    else if (b.dataset.vmsg) viewerShow(Number(b.dataset.vmsg));
+    else if (b.dataset.maxfor) { const d = $(b.dataset.maxfor), on = !d.classList.contains('max'); d.classList.toggle('max', on); store.set('max:' + d.id, on ? '1' : ''); syncMaxButtons(); }
+    else if (b.id === 'vsidebtn') { const off = !$('viewer').classList.contains('noside'); $('viewer').classList.toggle('noside', off); store.set('vside', off ? 'off' : ''); }
+    else if (b.id === 'cback') showSideList();
+    else if (b.id === 'csend') { syncComposer(); $('composer').close(); sendMany([composeFor], true); }
+    else if (b.id === 'vsend') { syncFromViewer(); const id = viewerItem?.id; $('viewer').close(); if (id) sendMany([id], true); }
+    else if (b.id === 'vexpand' || b.id === 'vmodebtn') { const it = viewerItem, i = viewerIndex; if (!it) return; $('viewer').close(); openComposer(it.id); showSideMsg(i); }
+    else if (b.id === 'cmsgview') { const it = byId.get(composeFor); if (!it) return; const i = $('csfull').hidden ? composerMsgs.length - 1 : composerShown; syncComposer(); $('composer').close(); viewItemAt(it, Math.max(i, 0)); }
+    else if (b.dataset.quick && b.dataset.for === 'viewer') {
+      const ta = $('vtext');
+      ta.value = (ta.value.trim() ? ta.value.replace(/\s*$/, '\n') : '') + b.dataset.quick;
+      syncFromViewer(); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+    }
     else if (b.dataset.quick) {
       const ta = $('ans-' + b.dataset.for);
       ta.value = (ta.value.trim() ? ta.value.replace(/\s*$/, '\n') : '') + b.dataset.quick;
       store.set(b.dataset.for, ta.value); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); syncPill();
-    } else if (b.dataset.older) {
+    } else if (b.dataset.tolast) {
+      const last = [...($('i-' + b.dataset.tolast)?.querySelectorAll('.thread > .msg') || [])].pop();
+      if (last) { last.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }); last.classList.remove('flash'); void last.offsetWidth; last.classList.add('flash'); }
+    } else if (b.dataset.full) {
+      const m = b.closest('.msg'), key = b.dataset.full;
+      if (fullMsgs.has(key)) { fullMsgs.delete(key); m.classList.remove('expanded', 'measured'); markLong(); b.textContent = 'Show in full'; m.scrollIntoView({ block: 'nearest' }); }
+      else { fullMsgs.add(key); m.classList.remove('long'); m.classList.add('expanded'); b.textContent = 'Show less'; }
+    } else if (b.dataset.view) viewMessage(Number(b.dataset.view));
+    else if (b.dataset.viewbody) viewBody(b.dataset.viewbody);
+    else if (b.id === 'vclose') $('viewer').close();
+    else if (b.dataset.older) {
       fullThreads.add(b.dataset.older);
       const item = byId.get(b.dataset.older), box = b.parentElement;
-      const messages = [...(item.thread || []).map(msgHTML), ...pendingFor(item.id).map(pendingHTML)];
-      box.innerHTML = messages.join('');
-    } else if (b.dataset.reopen) {
+      const msgs = [...(item.thread || []).map(m => msgHTML(m, item.id)), ...pendingFor(item.id).map(pendingHTML)];
+      box.innerHTML = msgs.join('');
+      fitTables();
+    } else if (b.dataset.setstatus) {
+      const id = b.dataset.for, ta = $('ans-' + id), note = ta?.value.trim() || '';
+      sendAction({ type: 'status', item: id, status: b.dataset.setstatus, ...(note ? { text: note } : {}) })
+        .then(ok => { if (ok && ta) { store.set(id, ''); syncPill(); } if (ok) toast(b.dataset.setstatus === 'closed' ? `${id} closed` : `${id} reopened`); });
+    } else if (b.dataset.delete) {
+      const id = b.dataset.delete, it = byId.get(id);
+      if (confirm(`Delete ${id} «${it?.title || ''}»${(it?.children || []).length ? ' with its sub-items' : ''}? The number will not be reused.`))
+        sendAction({ type: 'delete', item: id }).then(ok => { if (ok) { store.set(id, ''); toast(`${id} deleted`); } });
+    } else if (b.dataset.subitem) openForm('parent', b.dataset.subitem);
+    else if (b.dataset.addto) openForm(b.dataset.addto === 'phantom' ? 'phantom' : 'group', b.dataset.addto);
+    else if (b.dataset.formsubmit) submitForm();
+    else if (b.dataset.formcancel) { form = null; saveForm(); softRender(false); }
+    else if (b.dataset.reopen) {
       const col = b.closest('.col-answer');
       const it = { id: b.dataset.reopen, status: 'needs-you' };
       col.innerHTML = answerHTML(it);
       col.querySelector('textarea').focus();
     } else if (b.dataset.filter) {
       filter = b.dataset.filter;
-      document.querySelectorAll('[data-filter]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      document.querySelectorAll('[data-filter]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.filter === filter)));
       applyFilter();
     } else if (b.dataset.jump) {
-      const el = $('i-' + b.dataset.jump);
-      let p = el; while (p) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
-      el.classList.remove('hidden-by-filter');
-      $('rail').classList.remove('open');
-      markCurrent();
+      e.preventDefault();
+      goToItem(b.dataset.jump, true);
     } else if (b.id === 'sendAll') sendMany(drafts());
-    else if (b.id === 'toGeneral') { $('general').scrollIntoView({ behavior: 'smooth' }); $('ans-_general').focus({ preventScroll: true }); }
     else if (b.id === 'navbtn') $('rail').classList.toggle('open');
+    else if (b.id === 'railclose') $('rail').classList.remove('open');
     else if (b.id === 'theme') applyTheme(THEMES[(THEMES.indexOf(currentTheme()) + 1) % THEMES.length]);
     else if (b.id === 'expand') {
       const all = [...document.querySelectorAll('details.item:not(.hidden-by-filter)')];
       const openAll = all.some(d => !d.open);
-      all.forEach(d => { d.open = openAll; });
-      b.textContent = openAll ? 'Collapse all' : 'Expand all';
+      expandingAll = true; all.forEach(d => { d.open = openAll; }); setTimeout(() => { expandingAll = false; }, 0);
+      b.innerHTML = ico(openAll ? 'collapse' : 'expand'); b.title = b.ariaLabel = openAll ? 'Collapse all' : 'Expand all';
       markCurrent();
     }
   });
 
-  $('theme').textContent = THEME_LABEL[currentTheme()];
+  $('theme').innerHTML = ico(currentTheme()); $('theme').title = THEME_LABEL[currentTheme()];
+  $('expand').innerHTML = ico('expand'); $('vclose').innerHTML = ico('x'); $('totop').innerHTML = ico('send'); $('qrbtn').innerHTML = ico('qr'); $('searchbtn').innerHTML = ico('search'); $('qrclose').innerHTML = ico('x'); $('cclose').innerHTML = ico('collapse'); $('csidebtn').innerHTML = ico('panel'); $('vsidebtn').innerHTML = ico('panel'); $('vexpand').innerHTML = ico('max'); $('vsend').innerHTML = ico('send'); $('cmsgview').innerHTML = ico('doc'); $('vmodebtn').innerHTML = ico('pen'); syncMaxButtons();
   syncHighlightTheme();
-  $('ans-_general').value = store.get('_general');
-  load().catch(err => { $('title').textContent = 'Could not load state.json'; console.error(err); });
+  load().catch(err => { $('title').textContent = 'The page failed to load'; $('subtitle').textContent = String(err?.message || err); console.error(err); });
   setInterval(poll, 6000);
 })();
 </script>

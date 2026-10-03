@@ -22,9 +22,15 @@ SHARE_CLI = os.environ.get("SHARE_CLI", str(SKILL_DIR.parent / "share/share/bin/
 SHARE_ROOT = Path(os.environ.get("SHARE_ROOT", str(Path.home() / ".local/share/agent-share")))
 REGISTRY = Path(os.environ.get("DQ_REGISTRY", str(Path.home() / ".local/share/discuss/registry.json")))
 
-STATUSES = ("needs-you", "in-progress", "closed")
+STATUSES = ("needs-you", "in-progress", "closed", "deleted")
 ID_RE = re.compile(r"^[A-Z][0-9]+(\.[0-9]+)*$")
+MENTION_RE = re.compile(r"\b[A-Z][0-9]+(?:\.[0-9]+)*\b")
 GENERAL = "_general"
+OWN_GROUP_TITLE = "Your items"
+UNTITLED_ITEM = "New item — the AI will name it"
+UNTITLED_GROUP = "New section — the AI will name it"
+UNWRITTEN_BODY = "_The AI has not described this item yet: the first message is in the chat below._"
+MSG_KINDS = ("question", "event")
 
 
 def now() -> str:
@@ -57,6 +63,7 @@ def sync_page(entry: dict) -> None:
 
 
 def clip_link(entry: dict) -> None:
+    """Put the link into the tcp paste list once; re-adding would bump it to the top every turn."""
     tcp = shutil.which("tcp") or str(SKILL_DIR.parent / "clip/tool/bin/tcp")
     if not Path(tcp).exists():
         return
@@ -191,6 +198,80 @@ def cmd_page(args) -> None:
     print(entry["url"])
 
 
+def new_group(state: dict, title: str, own: bool = False) -> dict:
+    groups = state.setdefault("groups", [])
+    used = {g.get("id") for g in groups}
+    letter = next(c for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" if c not in used)
+    g = {"id": letter, "title": title, "author": "user", "items": [], **({"own": True} if own else {})}
+    groups.append(g)
+    return g
+
+
+def own_group(state: dict) -> dict:
+    """Items the reader adds without picking a group land in one group of their own."""
+    return next((g for g in state.get("groups", []) if g.get("own")), None) or new_group(state, OWN_GROUP_TITLE, own=True)
+
+
+def next_id(prefix: str, siblings: list, sep: str) -> str:
+    taken = [int(m.group(1)) for it in siblings if (m := re.fullmatch(re.escape(prefix + sep) + r"([0-9]+)", it["id"]))]
+    return f"{prefix}{sep}{max(taken, default=0) + 1}"
+
+
+def add_user_item(state: dict, data: dict, at: str) -> dict:
+    parent_id, group_id = str(data.get("parent") or ""), str(data.get("group") or "")
+    known = {i["id"]: i for i in all_items(state)}
+    if parent_id in known:
+        siblings, prefix, sep = known[parent_id].setdefault("children", []), parent_id, "."
+    else:
+        wants_group = data.get("newGroup") is True or bool(str(data.get("newGroup") or "").strip())
+        new_title = UNTITLED_GROUP if data.get("newGroup") is True else str(data.get("newGroup") or "").strip()
+        group = (new_group(state, new_title) if wants_group else None) \
+            or next((g for g in state.get("groups", []) if g.get("id") == group_id), None) or own_group(state)
+        siblings, prefix, sep = group.setdefault("items", []), group["id"], ""
+    title, text = str(data.get("title", "")).strip(), str(data.get("text", "")).strip()
+    # No title: the reader's text is the first chat message, and the AI names and describes the item.
+    item = {"id": next_id(prefix, siblings, sep), "title": title or UNTITLED_ITEM, "status": "in-progress",
+            "round": state["round"], "author": "user", "body": (text or title) if title else UNWRITTEN_BODY,
+            "created": at, "thread": [] if title else [{"who": "user", "round": state["round"], "at": at, "text": text}]}
+    if not title:
+        item["untitled"] = True
+    siblings.append(item)
+    return item
+
+
+STATUS_EVENT = {"closed": "closed the item", "needs-you": "reopened the item", "deleted": "deleted the item"}
+
+
+def apply_action(state: dict, data: dict, at: str):
+    """Page actions other than answers: a new item, a status change, a deletion. Returns (item id, line)."""
+    kind = data.get("type")
+    if kind == "new":
+        item = add_user_item(state, data, at)
+        where = " in a new section (name it: dq edit <key> <letter> --title)" if data.get("newGroup") is True \
+            else f" in a new section «{data['newGroup']}»" if data.get("newGroup") else ""
+        text = str(data.get("text", "")).strip()
+        todo = " — name and describe it: dq edit" if item.get("untitled") else ""
+        return item["id"], f"new item from you{where}{todo}: {item['title']}" + (f"\n  «{text}»" if text else "")
+    item_id = str(data.get("item", ""))
+    if item_id not in {i["id"] for i in all_items(state)}:
+        return item_id, f"action {kind} on an unknown item — skipped"
+    item = find_item(state, item_id)
+    status = "deleted" if kind == "delete" else data.get("status")
+    if status not in STATUS_EVENT:
+        return item_id, f"unknown action {kind}/{status} — skipped"
+    note = str(data.get("text", "")).strip()
+    item.setdefault("thread", []).append({"who": "user", "kind": "event", "round": state["round"], "at": at,
+                                          "text": STATUS_EVENT[status] + (f": {note}" if note else "")})
+    if status == "needs-you":
+        # Reopened by the reader: the AI looks at it before handing it back.
+        item["status"] = "in-progress"
+    else:
+        item["status"] = status
+    if status == "closed":
+        item["resolution"] = note or item.get("resolution") or "Closed by you on the page"
+    return item_id, STATUS_EVENT[status].lower() + (f": {note}" if note else "")
+
+
 def cmd_pull(args) -> None:
     entry = resolve(args.ref)
     state = load_state(entry)
@@ -199,19 +280,27 @@ def cmd_pull(args) -> None:
     if not fresh:
         print("No new answers.")
         return
+    known = {i["id"] for i in all_items(state)}
+    actions = [e for e in fresh if e.get("data", {}).get("type")]
     by_item: dict = {}
     for e in fresh:
         data = e.get("data", {})
-        item_id = str(data.get("item") or GENERAL)
         text = str(data.get("text", "")).strip()
-        if text:
-            by_item.setdefault(item_id, []).append((e["at"], text))
-    known = {i["id"] for i in all_items(state)}
+        if not data.get("type") and text:
+            by_item.setdefault(str(data.get("item") or GENERAL), []).append((e["at"], text))
     for item_id, answers in by_item.items():
         title = find_item(state, item_id)["title"] if item_id in known else ("General comment" if item_id == GENERAL else "unknown item")
         print(f"## {item_id} — {title}")
         for at, text in answers:
             print(f"_{at}_\n{text}\n")
+            mentioned = sorted({m for m in MENTION_RE.findall(text) if m in known and m != item_id})
+            if mentioned:
+                print(f"→ mentions other items: {', '.join(mentioned)}\n")
+    if actions and not args.merge:
+        print("## Page actions")
+        for e in actions:
+            d = e["data"]
+            print(f"- {e['at']} {d.get('type')} {d.get('item') or d.get('title', '')} {d.get('status', '')} {d.get('text', '')}".rstrip())
     if args.merge:
         general = state.setdefault("general", [])
         for item_id, answers in by_item.items():
@@ -220,23 +309,45 @@ def cmd_pull(args) -> None:
                 target.append({"who": "user", "round": state["round"], "at": at, "text": text,
                                **({} if item_id in known or item_id == GENERAL else {"item": item_id})})
             if item_id in known:
+                # An answer to a closed item reopens it: the reader had something left to say.
                 find_item(state, item_id)["status"] = "in-progress"
+        if actions:
+            print("## Page actions")
+        for e in actions:
+            item_id, line = apply_action(state, e["data"], e["at"])
+            print(f"- {item_id}: {line}")
         state["processed_until"] = max(e["at"] for e in fresh)
         save_state(entry, state)
-        print(f"Merged answers: {sum(len(v) for v in by_item.values())}; items, including closed ones, moved to in-progress.")
+        print(f"Merged answers: {sum(len(v) for v in by_item.values())}, actions: {len(actions)}; "
+              "answered items (closed ones too) moved to in-progress.")
+        print("Check every answer for its effect on other items, including answered and closed ones: "
+              "post a separate message there with `dq reply <key> <ID> --from <source>`.")
 
 
 def cmd_reply(args) -> None:
     entry = resolve(args.ref)
     state = load_state(entry)
-    item = find_item(state, args.id)
-    item.setdefault("thread", []).append({"who": args.who, "round": state["round"], "at": now(), "text": text_arg(args)})
-    if args.status:
-        item["status"] = args.status
-    if args.resolution:
-        item["resolution"] = args.resolution
+    text = text_arg(args)
+    if args.source:
+        find_item(state, args.source)
+    for item_id in args.id.split(","):
+        item = find_item(state, item_id)
+        item.setdefault("thread", []).append({"who": args.who, "round": state["round"], "at": now(), "text": text,
+                                              **({"from": args.source} if args.source else {}),
+                                              **({"ask": True} if args.ask else {})})
+        if args.status:
+            item["status"] = args.status
+        if args.resolution:
+            item["resolution"] = args.resolution
+        if args.who == "ai":
+            # Suggested answers belong to the AI's latest message; a new message without them clears the old ones.
+            replies = [r.strip() for r in (args.replies or "").split("|") if r.strip()]
+            if replies:
+                item["replies"] = replies
+            else:
+                item.pop("replies", None)
+        print(f"{item_id}: {item.get('status')}")
     save_state(entry, state)
-    print(f"{args.id}: {item.get('status')}")
 
 
 def cmd_set(args) -> None:
@@ -255,6 +366,32 @@ def cmd_set(args) -> None:
     print(f"{args.id}: {item.get('status')}")
 
 
+def cmd_edit(args) -> None:
+    """Rewrite an item's title/body/details or a section's title/intro; the old body stays in the chat history."""
+    entry = resolve(args.ref)
+    state = load_state(entry)
+    keep_history(entry, state)
+    def read(value):
+        return sys.stdin.read().rstrip() if value == "-" else Path(value).read_text().rstrip() if value else None
+    body, details = read(args.body), read(args.details)
+    if re.fullmatch(r"[A-Z]", args.id):
+        target = next((g for g in state.get("groups", []) if g.get("id") == args.id), None) or die(f"no section {args.id}")
+        if body is not None:
+            target["intro"] = body
+    else:
+        target = find_item(state, args.id)
+        if body is not None:
+            target["body"] = body
+            target.pop("untitled", None)
+        if details is not None:
+            target["details"] = details
+    if args.title:
+        target["title"] = args.title
+    keep_history(entry, state)
+    save_state(entry, state)
+    print(f"{args.id}: {target['title']}")
+
+
 def cmd_round(args) -> None:
     entry = resolve(args.ref)
     state = load_state(entry)
@@ -266,6 +403,7 @@ def cmd_round(args) -> None:
 def problems(state: dict) -> list:
     errs = []
     seen = set()
+    ids = {i.get("id") for i in all_items(state)}
     for g in state.get("groups", []):
         if not re.fullmatch(r"[A-Z]", g.get("id", "")):
             errs.append(f"group id must be one capital letter: {g.get('id')!r}")
@@ -292,8 +430,10 @@ def problems(state: dict) -> list:
                 for msg in it.get("thread", []):
                     if msg.get("who") not in ("user", "ai"):
                         errs.append(f"{iid}: thread message who must be user|ai")
-                    if msg.get("kind", "question") != "question":
-                        errs.append(f"{iid}: thread message kind can only be question")
+                    if msg.get("kind", "question") not in MSG_KINDS:
+                        errs.append(f"{iid}: thread message kind must be one of {MSG_KINDS}")
+                    if msg.get("from") and msg["from"] not in ids:
+                        errs.append(f"{iid}: message from unknown item {msg['from']}")
                 check(it.get("children", []), iid)
         check(g.get("items", []), "")
     return errs
@@ -334,8 +474,8 @@ def keep_history(entry: dict, state: dict) -> bool:
 def warnings(state: dict) -> list:
     out = []
     for item in all_items(state):
-        thread = item.get("thread", [])
-        if thread and thread[0].get("who") == "user":
+        thread = [m for m in item.get("thread", []) if m.get("kind") != "event"]
+        if thread and thread[0].get("who") == "user" and item.get("author") != "user":
             out.append(f"{item['id']}: history starts with a reply, but the original wording was not saved "
                        "(add it as the first message with kind=question)")
     return out
@@ -406,7 +546,7 @@ def cmd_status(args) -> None:
         lines = ["[discuss] Open point-by-point discussions. While any items remain open, "
                  "end the last message of every response with 'Questions: <url>'—the link alone. "
                  "Do not repeat the questions unless asked. If the user says they replied or asks to check, "
-                 "run `dq pull <key> --merge` and process the round using the discuss skill. In live mode, run `dq watch <key>` in the background; on NEW ANSWERS, pull --merge, reply to each item with `dq reply`, and watch again."]
+                 "run `dq pull <key> --merge` and process the round using the discuss skill. In live mode, run `dq watch <key>` in the background; on NEW ANSWERS, pull --merge, reply to each item with `dq reply`, and watch again. Check every answer against the whole list: other items it affects (answered ones too) get a message via `dq reply <key> <ID> --from <source>`."]
         for e, c, pending in rows:
             watch = "watcher running" if watcher_alive(e) else "watcher NOT running—start `dq watch` in the background"
             lines.append(f"- {e['title']}: {e['url']} (key {e['key'][:8]}; awaiting answers {c['needs-you']}, "
@@ -518,12 +658,23 @@ def main() -> None:
 
     s = sub.add_parser("reply", help="append a message to an item thread (text on stdin or --text)")
     s.add_argument("ref")
-    s.add_argument("id")
+    s.add_argument("id", help="item ID, or several separated by commas")
     s.add_argument("--text")
     s.add_argument("--who", default="ai", choices=("ai", "user"), help="user = an answer given in chat, not on the page")
+    s.add_argument("--from", dest="source", help="the item whose answer brought this message (shown as a link)")
+    s.add_argument("--ask", action="store_true", help="the message asks the reader something (highlighted in the chat)")
+    s.add_argument("--replies", help="answer options for the reader, separated by |; shown as chips above the answer box")
     s.add_argument("--status", choices=STATUSES)
     s.add_argument("--resolution")
     s.set_defaults(fn=cmd_reply)
+
+    s = sub.add_parser("edit", help="rewrite an item's title/body/details or a section's title/intro (A = section)")
+    s.add_argument("ref")
+    s.add_argument("id")
+    s.add_argument("--title")
+    s.add_argument("--body", help="file with the new body (section: intro), or - for stdin")
+    s.add_argument("--details", help="file with the new details, or - for stdin")
+    s.set_defaults(fn=cmd_edit)
 
     s = sub.add_parser("set", help="change an item's status / resolution / running action")
     s.add_argument("ref")
